@@ -1,0 +1,20 @@
+# Documentos clinicos - no versionar
+documents/
+
+# Base vectorial - se regenera desde documents/
+vector_db/
+
+# Entorno virtual Python
+venv/
+__pycache__/
+*.pyc
+
+# Informes generados
+scripts/hardware_report.txt
+test_results_*.md
+
+# Archivos temporales de edicion
+backend/main_trunc.py
+
+# Sistema
+.DS_Store
