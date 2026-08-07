@@ -8,9 +8,9 @@ VECTOR_DB_DIR = "../vector_db"
 client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
 collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
-query = "Cuales son los criterios para diagnosticar tuberculosis latente"
+query = "ما هو مرض السل الكامن؟"
 
-embedding = ollama.embeddings(model=EMBED_MODEL, prompt=query)["embedding"]
+embedding = ollama.embeddings(model=EMBED_MODEL, prompt="Tuberculosis: " + query)["embedding"]
 
 results = collection.query(query_embeddings=[embedding], n_results=10)
 

@@ -1,3 +1,4 @@
+import re
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -21,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-CHAT_MODEL = "qwen2.5:7b"
+CHAT_MODEL = "llama3.1:8b"
 EMBED_MODEL = "bge-m3"
 COLLECTION_NAME = "tbc_docs"
 CHUNK_SIZE = 2000
@@ -36,23 +37,171 @@ PATIENT_DIR = os.path.join(PROJECT_ROOT, "frontend_patient")
 chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
 collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
 
+TB_KEYWORDS = [
+    "tubercul", "tbc", "tb ", "bacilo", "mycobacterium", "koch",
+    "contagi", "contagio", "transmit", "transmis",
+    "tos", "esput", "sangre al toser", "hemoptisis",
+    "fiebre", "sudor", "sudo", "peso", "cansancio", "fatiga",
+    "pulmon", "pulmonar", "respirat", "torax", "torácico",
+    "diagnost", "baciloscopia", "cultivo", "genexpert", "pcr",
+    "radiografia", "tac ", "mantoux", "tuberculina", "igra", "ppd",
+    "latente", "itl", "infeccion tuberculosa",
+    "tratamiento", "medicamento", "pastilla", "dosis", "farmaco",
+    "isoniazida", "rifampicina", "pirazinamida", "etambutol",
+    "rifapentina", "bedaquilina", "linezolid", "pretomanid",
+    "efecto secundario", "efectos adversos", "higado", "hepat",
+    "vista", "ojo", "orina", "sarpullido", "erupcion",
+    "alcohol", "dieta", "alimentacion", "vitamina", "b6",
+    "paracetamol", "ibuprofeno", "antibiotico", "anticoncept",
+    "anticoagulant", "vih", "antidepresiv",
+    "embaraz", "lactancia", "bebe", "pecho",
+    "trabajo", "baja laboral", "colegio", "escuela", "nino",
+    "viaj", "avion",
+    "seguimiento", "analisis", "control",
+    "resistente", "mdr", "xdr",
+    "diabetes", "corticoide", "biologico", "inmunodeprimid",
+    "vacuna", "bcg",
+    "contacto", "familia", "familiar", "mascarilla",
+    "ejercicio", "conducir", "relaciones sexuales", "dormir",
+    "cocinar", "cuidar", "ventana",
+    "curacion", "secuela", "recaida", "reinfect",
+    "aislamiento", "aislar",
+    "baar", "sensible", "resistencia",
+    "alergi", "reaccion alergica",
+    "miedo",
+    "ansiedad",
+    "estigma",
+    "verguenza",
+    "agobio",
+    "agobiad",
+    "psicolog",
+    "apoyo emocional",
+    "grupo de apoyo",
+    "ansios",
+    "abrazo",
+    "abrazar",
+    "beso",
+    "besar",
+    "dar la mano",
+    "aire acondicionado",
+    "mascota",
+    "perro",
+    "gato",
+    "animal",
+    "gimnasio",
+    "deporte",
+    "fumar",
+    "tabaco",
+    "cigarrillo",
+    "vapear",
+    "vapeo",
+    "sexo",
+    "pareja",
+    "empresa",
+    "jefe",
+    "recursos humanos",
+    "compañero",
+    "compañeros",
+    "guarderia",
+    "pasaporte",
+    "informe medico",
+    "aeropuerto",
+    "recien nacido",
+    "nieto",
+    "nieta",
+    "abuela",
+    "abuelo",
+    "hijo",
+    "hijos",
+    "triturar",
+    "conservar",
+    "nevera",
+    "caduca",
+    "caducidad",
+    "recaer",
+    "curado",
+    "grave",
+    "gravedad",
+    "morir",
+    "muerte",
+    "dolor",
+    "vomit",
+    "nausea",
+    "pica",
+    "borros",
+    "visita",
+    "analitica",
+    "termin",
+    "resultado",
+    "mayor",
+    "defensas",
+    "interaccion",
+    "cura",
+    "curar",
+    "parto",
+    "aisla",
+    "apoyo",
+    "despid",
+    "confidencial",
+    "rechaz",
+    "pronostico",
+    "ropa",
+    "bano",
+    "compartir",
+    "visitar",
+    "riesgo",
+    "urgencia",
+    "amarill",
+    "sangre",
+    "especialista",
+    "revision",
+    "alta",
+    "horario",
+    "estomago",
+    "ayunas",
+    "manchas",
+    "lagrimas",
+    "desinfectar",
+    "lejia",
+    "veterinario",
+    "cafe",
+    "suplemento",
+    "proteccion",
+    "muestra",
+    "azucar",
+    "muscular",
+    "analgesic",
+    "ginecolog",
+    "neumolog",
+]
+
+def is_tb_related(text):
+    normalized = text.lower()
+    normalized = normalized.replace("?", " ").replace("!", " ").replace(".", " ").replace(",", " ")
+    normalized = " " + normalized + " "
+    return any((" " + kw if not kw.endswith(" ") else kw) in normalized for kw in TB_KEYWORDS) or any(kw.strip() in normalized for kw in TB_KEYWORDS)
+
+
 SYSTEM_PROMPT = """Eres un asistente clinico especializado en tuberculosis (TBC).
 
 REGLAS OBLIGATORIAS:
 0. Responde SIEMPRE en español, incluso si los documentos fuente estan en ingles u otro idioma. Traduce terminologia tecnica al espanol cuando exista un termino equivalente reconocido.
-1. Responde EXCLUSIVAMENTE usando la informacion contenida en el CONTEXTO proporcionado abajo.
-2. Si el contexto no contiene informacion suficiente para responder, di textualmente: "No encuentro esta informacion en los documentos disponibles."
-3. No inventes datos, cifras, ni recomendaciones que no esten en el contexto.
-4. Cita siempre la fuente y pagina de cada afirmacion, usando el formato: (Fuente: {source}, p.{page}).
+1. Responde EXCLUSIVAMENTE usando la informacion contenida en el CONTEXTO proporcionado abajo. Tienes PROHIBIDO usar tu conocimiento general o entrenamiento previo para completar, ampliar o sustituir informacion que falte en el contexto, incluso si tu conocimiento general es correcto. Esto aplica siempre, sin excepcion, incluso cuando el contexto sea parcial, ambiguo o este relacionado solo indirectamente con la pregunta.
+2. Si el contexto no contiene informacion suficiente para responder, tu respuesta COMPLETA debe ser, palabra por palabra y sin nada mas antes ni despues: "No encuentro esta informacion en los documentos disponibles."
+3. No inventes datos, cifras, ni recomendaciones que no esten en el contexto. Si detectas que el contexto no cubre la pregunta, NUNCA ofrezcas "informacion general" como alternativa: usa directamente la frase fija de la regla 2.
+4. Cita siempre la fuente y pagina de cada afirmacion, usando el formato: (Fuente: {source}, p.{page}). No cites una fuente para respaldar una afirmacion que esa fuente no contiene realmente.
 5. Si distintas fuentes del contexto se contradicen entre si, indicalo explicitamente y explica la discrepancia en vez de elegir una sin mas.
 6. Separa claramente los datos/evidencia de tu interpretacion cuando la haya.
-7. Si usas la frase "No encuentro esta informacion en los documentos disponibles", esa debe ser tu UNICA respuesta. No añadas explicaciones, aproximaciones ni conocimiento general a continuacion.
+7. La frase "No encuentro esta informacion en los documentos disponibles." es una respuesta binaria: o es tu ÚNICA respuesta completa, o no aparece en absoluto. Nunca la combines con explicaciones, disculpas, conocimiento general, ni frases como "sin embargo puedo ofrecerte..." Si dudas entre responder con el contexto o rellenar con lo que sabes, elige SIEMPRE la frase fija.
 """
 
 
 class ChatRequest(BaseModel):
     message: str
     top_k: int = 8
+
+
+MIN_ALNUM_CHARS = 40
 
 
 def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
@@ -62,7 +211,9 @@ def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
         end = start + chunk_size
         chunk = text[start:end].strip()
         if chunk:
-            chunks.append(chunk)
+            alnum_count = sum(1 for c in chunk if c.isalnum())
+            if alnum_count >= MIN_ALNUM_CHARS:
+                chunks.append(chunk)
         start += chunk_size - overlap
     return chunks
 
@@ -115,7 +266,7 @@ def health():
 
 @app.post("/api/chat")
 def chat(request: ChatRequest):
-    query_embedding = ollama.embeddings(model=EMBED_MODEL, prompt=request.message)["embedding"]
+    query_embedding = ollama.embeddings(model=EMBED_MODEL, prompt="Tuberculosis: " + request.message)["embedding"]
 
     results = collection.query(
         query_embeddings=[query_embedding],
@@ -124,12 +275,31 @@ def chat(request: ChatRequest):
 
     fragments = results["documents"][0] if results["documents"] else []
     metadatas = results["metadatas"][0] if results["metadatas"] else []
+    distances = results["distances"][0] if results["distances"] else []
 
-    if not fragments:
+    STRICT_DISTANCE_THRESHOLD = 480
+    LOOSE_DISTANCE_THRESHOLD = 750
+
+    has_keyword = is_tb_related(request.message)
+
+    if not fragments or not distances:
         return {
             "response": "No encuentro esta informacion en los documentos disponibles.",
             "sources": [],
         }
+
+    if has_keyword:
+        if distances[0] > LOOSE_DISTANCE_THRESHOLD:
+            return {
+                "response": "No encuentro esta informacion en los documentos disponibles.",
+                "sources": [],
+            }
+    else:
+        if distances[0] > STRICT_DISTANCE_THRESHOLD:
+            return {
+                "response": "No encuentro esta informacion en los documentos disponibles.",
+                "sources": [],
+            }
 
     context_parts = []
     sources_used = []
@@ -158,8 +328,44 @@ def chat(request: ChatRequest):
         },
     )
 
+    final_response = response["message"]["content"]
+    no_info_phrase = "No encuentro esta informaci"
+    CANNED_NO_INFO = "No encuentro esta informacion en los documentos disponibles."
+
+    LEAK_PATTERNS = [
+        "no contiene informacion especifica",
+        "no contiene informaci\u00f3n especifica",
+        "sin embargo, puedo ofrecerte",
+        "puedo ofrecerte informacion general",
+        "informacion general sobre",
+        "de manera general,",
+        "por lo general,",
+        "seg\u00fan mi conocimiento",
+        "segun mi conocimiento",
+        "el texto proporcionado no",
+        "el contexto no contiene",
+        "no se menciona expl\u00edcitamente",
+        "no se menciona explicitamente",
+    ]
+
+    def normalize_for_check(text):
+        t = text.lower()
+        for a, b in [("\u00e1", "a"), ("\u00e9", "e"), ("\u00ed", "i"), ("\u00f3", "o"), ("\u00fa", "u")]:
+            t = t.replace(a, b)
+        return t
+
+    normalized_response = normalize_for_check(final_response)
+    leaked = any(pat in normalize_for_check(pat) and normalize_for_check(pat) in normalized_response for pat in LEAK_PATTERNS)
+    leaked = any(normalize_for_check(pat) in normalized_response for pat in LEAK_PATTERNS)
+
+    if final_response.strip().startswith(no_info_phrase):
+        sources_used = []
+    elif leaked:
+        final_response = CANNED_NO_INFO
+        sources_used = []
+
     return {
-        "response": response["message"]["content"],
+        "response": final_response,
         "sources": sources_used,
     }
 
@@ -190,6 +396,130 @@ async def upload_document(file: UploadFile = File(...), category: str = Form("si
     }
 
 
+PATIENT_SYSTEM_PROMPT = """Eres un asistente que ayuda a pacientes en tratamiento de tuberculosis a entender su enfermedad.
+Hablas con el propio paciente, no con un profesional sanitario.
+
+REGLAS OBLIGATORIAS:
+0. Responde en el idioma indicado (variable de idioma), con frases cortas y palabras sencillas, como hablarias con alguien sin conocimientos medicos. Evita jerga clinica; si usas un termino tecnico, explicalo en la misma frase con palabras normales.
+1. Responde EXCLUSIVAMENTE usando la informacion contenida en el CONTEXTO proporcionado abajo. Tienes PROHIBIDO usar conocimiento general o entrenamiento previo para completar lo que falte en el contexto, incluso si ese conocimiento es correcto.
+2. Si el contexto no contiene informacion suficiente para responder, tu respuesta COMPLETA debe ser, sin nada mas antes ni despues: "No encuentro esta informacion en los documentos disponibles."
+3. No inventes datos, dosis, ni recomendaciones que no esten en el contexto. Nunca ofrezcas informacion general como alternativa: usa la frase fija de la regla 2.
+4. No des consejos que sustituyan a un profesional sanitario. Si la pregunta suena a sintoma, urgencia o duda sobre su propia medicacion, recuerda amablemente que consulte a su equipo de TBC ademas de responder lo que digan los documentos.
+5. Tono calido y cercano, nunca alarmista. No repitas la pregunta del paciente.
+6. No cites nombres de archivos PDF ni paginas al paciente: eso es para profesionales. Si necesitas referenciar el origen, di simplemente "segun las guias clinicas".
+"""
+
+
+class PatientChatRequest(BaseModel):
+    message: str
+    lang: str = "es"
+
+
+@app.post("/api/patient-chat")
+def patient_chat(request: PatientChatRequest):
+    # Nombres de idioma y mensaje fijo de "sin informacion" en cada idioma,
+    # definidos al principio de la funcion para poder usarlos en cualquier
+    # punto (incluidos los retornos tempranos del filtro de relevancia).
+    LANG_NAMES = {
+        "ca": "catalan",
+        "es": "castellano",
+        "ar": "arabe (fusha / arabe estandar, para que lo entienda tambien un hablante de darija marroqui)",
+        "ur": "urdu",
+    }
+    lang_name = LANG_NAMES.get(request.lang, "castellano")
+
+    CANNED_NO_INFO_BY_LANG = {
+        "es": "No encuentro esta informacion en los documentos disponibles.",
+        "ca": "No trobo aquesta informacio en els documents disponibles.",
+        "ar": "\u0644\u0627 \u0623\u062c\u062f \u0647\u0630\u0647 \u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0629 \u0641\u064a \u0627\u0644\u0648\u062b\u0627\u0626\u0642 \u0627\u0644\u0645\u062a\u0627\u062d\u0629.",
+        "ur": "\u0645\u062c\u06be\u06d2 \u062f\u0633\u062a\u06cc\u0627\u0628 \u062f\u0633\u062a\u0627\u0648\u06cc\u0632\u0627\u062a \u0645\u06cc\u06ba \u06cc\u06c1 \u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0646\u06c1\u06cc\u06ba \u0645\u0644\u06cc\u06ba\u06d4",
+    }
+    canned_no_info = CANNED_NO_INFO_BY_LANG.get(request.lang, CANNED_NO_INFO_BY_LANG["es"])
+
+    query_embedding = ollama.embeddings(model=EMBED_MODEL, prompt="Tuberculosis: " + request.message)["embedding"]
+
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=8,
+    )
+
+    fragments = results["documents"][0] if results["documents"] else []
+    metadatas = results["metadatas"][0] if results["metadatas"] else []
+    distances = results["distances"][0] if results["distances"] else []
+
+    STRICT_DISTANCE_THRESHOLD = 480
+    LOOSE_DISTANCE_THRESHOLD = 750
+
+    # La lista TB_KEYWORDS solo cubre espanol: en arabe/urdu nunca habria
+    # coincidencia, lo que forzaria siempre el umbral estricto (480) aunque
+    # la pregunta sea legitima. Como esta app esta dedicada integramente a
+    # tuberculosis, tratamos estos dos idiomas como "dentro de dominio" por
+    # defecto y usamos el umbral permisivo (750).
+    has_keyword = is_tb_related(request.message) or request.lang in ("ar", "ur")
+
+    if not fragments or not distances:
+        return {"response": canned_no_info}
+
+    if has_keyword:
+        if distances[0] > LOOSE_DISTANCE_THRESHOLD:
+            return {"response": canned_no_info}
+    else:
+        if distances[0] > STRICT_DISTANCE_THRESHOLD:
+            return {"response": canned_no_info}
+
+    context_parts = [frag for frag in fragments]
+    context_text = "\n\n---\n\n".join(context_parts)
+
+    user_prompt = f"IDIOMA DE RESPUESTA: {lang_name}\n\nCONTEXTO:\n{context_text}\n\nPREGUNTA DEL PACIENTE:\n{request.message}"
+
+    response = ollama.chat(
+        model=CHAT_MODEL,
+        messages=[
+            {"role": "system", "content": PATIENT_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+        options={"temperature": 0.1, "top_p": 0.9},
+    )
+
+    final_response = response["message"]["content"]
+    normalized_check = final_response.lower()
+    for a, b in [("\u00e1", "a"), ("\u00e9", "e"), ("\u00ed", "i"), ("\u00f3", "o"), ("\u00fa", "u")]:
+        normalized_check = normalized_check.replace(a, b)
+
+    CANNED_NO_INFO_PATIENT = "No encuentro esta informacion en los documentos disponibles."
+
+    # Si el modelo expresa "no lo se" con sus propias palabras (con o sin
+    # rodeos tipo "lo siento"), lo normalizamos a la frase fija, en vez de
+    # dejar pasar variantes que no coinciden exactamente y contaminan las
+    # estadisticas de "con respuesta / sin cobertura".
+    no_info_variants = [
+        "no encuentro esta informacion", "no encuentro informacion",
+        "no tengo esta informacion", "no tengo informacion",
+        "no dispongo de esta informacion", "no dispongo de informacion",
+        "no cuento con esta informacion", "no cuento con informacion",
+    ]
+    said_no_info = any(v in normalized_check for v in no_info_variants)
+
+    leaked = any(pat in normalized_check for pat in [
+        "sin embargo, puedo ofrecerte", "informacion general sobre",
+        "segun mi conocimiento", "de manera general,",
+        "puedo ofrecerte", "puedo darte informacion general",
+    ])
+
+    if said_no_info or leaked:
+        final_response = CANNED_NO_INFO_PATIENT
+
+    # Elimina menciones a nombres de archivo, URLs o citas de fuente que el
+    # modelo pueda colar pese a la instruccion del prompt de no mencionarlas
+    # al paciente (regla 6 del PATIENT_SYSTEM_PROMPT).
+    final_response = re.sub(r"\(Fuente:.*?\)", "", final_response, flags=re.IGNORECASE | re.DOTALL)
+    final_response = re.sub(r"https?://\S+", "", final_response)
+    final_response = re.sub(r"\S+\.pdf", "", final_response, flags=re.IGNORECASE)
+    final_response = re.sub(r"\s{2,}", " ", final_response).strip()
+
+    return {"response": final_response}
+
+
 @app.get("/", response_class=HTMLResponse)
 def home():
     return """
@@ -199,6 +529,7 @@ def home():
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TBC · Panell local</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F4B4C'/%3E%3Cpath d='M10,50 L35,50 L42,30 L50,70 L58,50 L90,50' stroke='%233E8E89' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>

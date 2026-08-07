@@ -48,6 +48,9 @@ def extract_text_by_page(pdf_path):
     return pages
 
 
+MIN_ALNUM_CHARS = 40
+
+
 def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     chunks = []
     start = 0
@@ -55,7 +58,9 @@ def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
         end = start + chunk_size
         chunk = text[start:end].strip()
         if chunk:
-            chunks.append(chunk)
+            alnum_count = sum(1 for c in chunk if c.isalnum())
+            if alnum_count >= MIN_ALNUM_CHARS:
+                chunks.append(chunk)
         start += chunk_size - overlap
     return chunks
 

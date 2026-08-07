@@ -169,10 +169,51 @@ function triage(text){
    habitual entre els pacients que fan servir l'app. */
 const CATALAN_MARKERS = /\b(tinc|vull|aixo|aquest|aquesta|tambe|quant|gracies|voldria|estic|molt|puc|dic|es troba|em trobo)\b/;
 function detectLang(text){
-  return CATALAN_MARKERS.test(norm(text)) ? 'ca' : 'es';
+  if (CATALAN_MARKERS.test(norm(text))) return 'ca';
+  // Deteccion de escritura arabe (cubre tanto arabe estandar/darija como urdu,
+  // que comparten el alfabeto arabe con extensiones). Distinguimos ur de ar
+  // por la presencia de letras propias del urdu que el arabe no usa.
+  const ARABIC_SCRIPT = /[\u0600-\u06FF\u0750-\u077F]/;
+  const URDU_ONLY_LETTERS = /[\u0679\u0688\u0691\u06BA\u06BE\u06C1\u06C2\u06C3\u06D2]/; // ٹ ڈ ڑ ں ھ ہ ۂ ۃ ے
+  if (ARABIC_SCRIPT.test(text)) {
+    return URDU_ONLY_LETTERS.test(text) ? 'ur' : 'ar';
+  }
+  return 'es';
 }
 
 const REPLY_STRINGS = {
+  // AVISO: los bloques 'ar' y 'ur' contienen traducciones de los mensajes
+  // fijos de seguridad. NO han sido revisadas por un hablante nativo.
+  // Deben confirmarse por una persona que domine el idioma antes de usarse
+  // con pacientes reales, en especial el mensaje 'urgent'.
+  ar: {
+    urgent: "\u062a\u062d\u062a\u0627\u062c \u0647\u0630\u0647 \u0627\u0644\u0623\u0639\u0631\u0627\u0636 \u0625\u0644\u0649 \u062a\u0642\u064a\u064a\u0645 \u0637\u0628\u064a \u0627\u0644\u064a\u0648\u0645. \u0627\u062a\u0635\u0644 \u0627\u0644\u0622\u0646 \u0628\u0641\u0631\u064a\u0642 \u0639\u0644\u0627\u062c \u0627\u0644\u0633\u0644 \u0627\u0644\u062e\u0627\u0635 \u0628\u0643; \u0625\u0630\u0627 \u0627\u0632\u062f\u0627\u062f \u0627\u0644\u0623\u0645\u0631 \u0633\u0648\u0621\u064b \u0623\u0648 \u0643\u0627\u0646\u062a \u0644\u062f\u064a\u0643 \u062d\u0645\u0649 \u0634\u062f\u064a\u062f\u0629 \u0623\u0648 \u0635\u0639\u0648\u0628\u0629 \u0641\u064a \u0627\u0644\u062a\u0646\u0641\u0633\u060c \u062a\u0648\u062c\u0647 \u0625\u0644\u0649 \u0627\u0644\u0637\u0648\u0627\u0631\u0626. \u0644\u0627 \u062a\u062a\u0646\u0627\u0648\u0644 \u0627\u0644\u062c\u0631\u0639\u0629 \u0627\u0644\u062a\u0627\u0644\u064a\u0629 \u0642\u0628\u0644 \u0627\u0644\u062a\u062d\u062f\u062b \u0645\u0639 \u0627\u0644\u0637\u0628\u064a\u0628.",
+    moderate: "\u0642\u062f \u064a\u0643\u0648\u0646 \u0647\u0630\u0627 \u0623\u062b\u0631\u064b\u0627 \u0645\u062a\u0639\u0644\u0642\u064b\u0627 \u0628\u0627\u0644\u0639\u0644\u0627\u062c. \u0627\u062a\u0635\u0644 \u0628\u0641\u0631\u064a\u0642 \u0627\u0644\u0631\u0639\u0627\u064a\u0629 \u0627\u0644\u062e\u0627\u0635 \u0628\u0643 \u062e\u0644\u0627\u0644 24 \u0625\u0644\u0649 48 \u0633\u0627\u0639\u0629. \u0644\u0627 \u062a\u0648\u0642\u0641 \u0627\u0644\u062f\u0648\u0627\u0621 \u0645\u0646 \u062a\u0644\u0642\u0627\u0621 \u0646\u0641\u0633\u0643.",
+    mildForgot: "\u0625\u0630\u0627 \u0645\u0631\u062a \u0633\u0627\u0639\u0627\u062a \u0642\u0644\u064a\u0644\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0648\u0639\u062f \u0627\u0644\u0645\u0639\u062a\u0627\u062f\u060c \u062a\u0646\u0627\u0648\u0644 \u0627\u0644\u062c\u0631\u0639\u0629 \u0627\u0644\u062a\u064a \u0641\u0627\u062a\u062a\u0643. \u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0648\u0642\u062a \u0642\u0631\u064a\u0628\u064b\u0627 \u0645\u0646 \u0627\u0644\u062c\u0631\u0639\u0629 \u0627\u0644\u062a\u0627\u0644\u064a\u0629\u060c \u0644\u0627 \u062a\u0636\u0627\u0639\u0641 \u0627\u0644\u062c\u0631\u0639\u0629: \u0627\u0633\u062a\u0645\u0631 \u0628\u0627\u0644\u0646\u0638\u0627\u0645 \u0627\u0644\u0639\u0627\u062f\u064a.",
+    mildMedicationNeeded: "\u0625\u0630\u0627 \u0646\u0641\u062f \u0627\u0644\u062f\u0648\u0627\u0621 \u0623\u0648 \u0627\u062d\u062a\u062c\u062a \u0625\u0644\u064a\u0647\u060c \u0627\u062a\u0635\u0644 \u0641\u0648\u0631\u064b\u0627 \u0628\u0645\u0645\u0631\u0636\u062a\u0643 \u0623\u0648 \u0627\u0644\u0635\u064a\u062f\u0644\u064a\u0629 \u0627\u0644\u0645\u0631\u062c\u0639\u064a\u0629 \u0644\u062a\u0648\u0641\u064a\u0631\u0647 \u0644\u0643. \u0644\u0627 \u062a\u063a\u064a\u0631 \u0627\u0644\u062c\u0631\u0639\u0629 \u0623\u0648 \u062a\u062a\u0648\u0642\u0641 \u0639\u0646 \u062a\u0646\u0627\u0648\u0644\u0647 \u0645\u0646 \u062a\u0644\u0642\u0627\u0621 \u0646\u0641\u0633\u0643.",
+    mildGeneric: "\u0633\u062c\u0651\u0644 \u0627\u0644\u0639\u0631\u0636 \u0648\u062a\u062d\u062f\u062b \u0639\u0646\u0647 \u0641\u064a \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u0627\u0644\u0642\u0627\u062f\u0645\u0629. \u0627\u062a\u0635\u0644 \u0642\u0628\u0644 \u0630\u0644\u0643 \u0625\u0630\u0627 \u0632\u0627\u062f \u0627\u0644\u0623\u0645\u0631 \u0633\u0648\u0621\u064b \u0623\u0648 \u0638\u0647\u0631\u062a \u0623\u0639\u0631\u0627\u0636 \u0623\u062e\u0631\u0649.",
+    greeting: "\u0645\u0631\u062d\u0628\u064b\u0627! \u0623\u0646\u0627 \u0647\u0646\u0627 \u0644\u0645\u0633\u0627\u0639\u062f\u062a\u0643 \u062e\u0644\u0627\u0644 \u0627\u0644\u0639\u0644\u0627\u062c. \u0623\u062e\u0628\u0631\u0646\u064a \u0628\u0645\u0627 \u062a\u062d\u062a\u0627\u062c \u0625\u0644\u064a\u0647.",
+    infoDefault: "\u0634\u0643\u0631\u064b\u0627 \u0639\u0644\u0649 \u0631\u0633\u0627\u0644\u062a\u0643. \u0633\u064a\u0642\u0648\u0645 \u0623\u062d\u062f \u0627\u0644\u0645\u062e\u062a\u0635\u064a\u0646 \u0628\u0645\u0631\u0627\u062c\u0639\u062a\u0647\u0627. \u0627\u062a\u0635\u0644 \u0641\u0648\u0631\u064b\u0627 \u0625\u0630\u0627 \u0644\u0627\u062d\u0638\u062a \u062f\u0645\u064b\u0627 \u0641\u064a \u0627\u0644\u0628\u0644\u063a\u0645\u060c \u062d\u0645\u0649 \u0634\u062f\u064a\u062f\u0629\u060c \u0635\u0639\u0648\u0628\u0629 \u0641\u064a \u0627\u0644\u062a\u0646\u0641\u0633 \u0623\u0648 \u0627\u0635\u0641\u0631\u0627\u0631\u064b\u0627 \u0641\u064a \u0627\u0644\u062c\u0644\u062f \u0623\u0648 \u0627\u0644\u0639\u064a\u0646\u064a\u0646.",
+    ack: ["\u062d\u0633\u0646\u064b\u0627. ", "\u0645\u0641\u0647\u0648\u0645. ", "\u0634\u0643\u0631\u064b\u0627 \u0644\u0634\u0631\u062d\u0643. "],
+    kbIntro: "",
+    translationUnavailable: "",
+    sourceLabel: "",
+    topics: {}
+  },
+  ur: {
+    urgent: "\u0627\u0633 \u0639\u0644\u0627\u0645\u062a \u06a9\u0648 \u0622\u062c \u06c1\u06cc \u0637\u0628\u06cc \u0645\u0639\u0627\u0626\u0646\u06c1 \u06a9\u06cc \u0636\u0631\u0648\u0631\u062a \u06c1\u06d2\u06d4 \u0627\u0628\u06be\u06cc \u0627\u067e\u0646\u06cc \u0679\u06cc \u0628\u06cc \u0633\u06cc \u0679\u06cc\u0645 \u0633\u06d2 \u0631\u0627\u0628\u0637\u06c1 \u06a9\u0631\u06cc\u06ba\u06d4 \u0627\u06af\u0631 \u062d\u0627\u0644\u062a \u062e\u0631\u0627\u0628 \u06c1\u0648 \u062c\u0627\u0626\u06d2\060c \u062a\u06cc\u0632 \u0628\u062e\u0627\u0631 \u06cc\u0627 \u0633\u0627\u0646\u0633 \u0644\u06cc\u0646\u06d2 \u0645\u06cc\u06ba \u062f\u0634\u0648\u0627\u0631\u06cc \u06c1\u0648\u060c \u0627\u06cc\u0645\u0631\u062c\u0646\u0633\u06cc \u0645\u06cc\u06ba \u062c\u0627\u0626\u06cc\u06ba\u06d4 \u0688\u0627\u06a9\u0679\u0631 \u0633\u06d2 \u0628\u0627\u062a \u06a9\u06cc\u06d2 \u0628\u063a\u06cc\u0631 \u0627\u06af\u0644\u06cc \u062e\u0648\u0631\u0627\u06a9 \u0646\u06c1 \u0644\u06cc\u06ba\u06d4",
+    moderate: "\u06cc\u06c1 \u0639\u0644\u0627\u062c \u0633\u06d2 \u0645\u062a\u0639\u0644\u0642 \u0627\u062b\u0631 \u06c1\u0648 \u0633\u06a9\u062a\u0627 \u06c1\u06d2\u06d4 24 \u0633\u06d2 48 \u06af\u06be\u0646\u0679\u0648\u06baں \u06a9\u06d2 \u0627\u0646\u062f\u0631 \u0627\u067e\u0646\u06cc \u0679\u06cc\u0645 \u0633\u06d2 \u0631\u0627\u0628\u0637\u06c1 \u06a9\u0631\u06cc\u06ba\u06d4 \u062e\u0648\u062f \u0633\u06d2 \u062f\u0648\u0627 \u0628\u0646\u062f \u0646\u06c1 \u06a9\u0631\u06cc\u06ba\u06d4",
+    mildForgot: "\u0627\u06af\u0631 \u0645\u0639\u0645\u0648\u0644\u06cc \u0648\u0642\u062a \u0633\u06d2 \u0686\u0646\u062f \u06af\u06be\u0646\u0679\u06d2 \u06af\u0632\u0631\u06d2 \u06c1\u06cc\u06ba\u060c \u062a\u0648 \u0686\u06be\u0648\u0679\u06cc \u06c1\u0648\u0626\u06cc \u062e\u0648\u0631\u0627\u06a9 \u0644\u06d2 \u0644\u06cc\u06ba\u06d4 \u0627\u06af\u0631 \u0627\u06af\u0644\u06cc \u062e\u0648\u0631\u0627\u06a9 \u0642\u0631\u06cc\u0628 \u06c1\u06d2 \u062a\u0648 \u062f\u0648\u06c1\u0631\u06cc \u062e\u0648\u0631\u0627\u06a9 \u0646\u06c1 \u0644\u06cc\u06ba\u06d4",
+    mildMedicationNeeded: "\u0627\u06af\u0631 \u062f\u0648\u0627 \u062e\u062a\u0645 \u06c1\u0648 \u06af\u06cc\u0627 \u06c1\u06d2 \u06cc\u0627 \u0636\u0631\u0648\u0631\u062a \u06c1\u06d2\u060c \u062c\u0644\u062f \u0627\u0632 \u062c\u0644\u062f \u0627\u067e\u0646\06cc \u0646\u0631\u0633 \u06cc\u0627 \u0641\u0627\u0631\u0645\u0633\u06cc \u0633\u06d2 \u0631\u0627\u0628\u0637\u06c1 \u06a9\u0631\u06cc\u06ba\u06d4",
+    mildGeneric: "\u0639\u0644\u0627\u0645\u062a \u06a9\u0648 \u0646\u0648\u0679 \u06a9\u0631\u06cc\u06ba \u0627\u0648\u0631 \u0627\u06af\u0644\u06cc \u0645\u0644\u0627\u0642\u0627\062a \u0645\u06cc\u06ba \u0628\u062a\u0627\u0626\u06cc\u06ba\u06d4",
+    greeting: "\u0627\u0633\u0644\u0627\u0645! \u0645\u06cc\u06ba \u0639\u0644\u0627\u062c \u06a9\u06d2 \u062f\u0648\u0631\u0627\u0646 \u0622\u067e \u06a9\u06cc \u0645\u062f\u062f \u06a9\u06d2 \u0644\u06cc\u06d2 \u06cc\u06c1\u0627\u06ba \u06c1\u0648\u06ba\u06d4",
+    infoDefault: "\u067e\u06cc\u063a\u0627\u0645 \u06a9\u0627 \u0634\u06a9\u0631\u06cc\u06c1\u06d4 \u0627\u06af\u0644\u06cc \u0645\u0644\u0627\u0642\u0627\u062a \u0645\u06cc\u06ba \u062c\u0627\u0626\u0632\u06c1 \u0644\u06cc\u0646\u062a\u0627 \u062c\u0627\u0626\u06d2 \u06af\u0627\u06d4",
+    ack: ["\u0628\u06c1\u062a \u0627\u0686\u06be\u0627\u06d4 ", "\u0633\u0645\u062c \u06af\u06cc\u0627\u06d4 ", "\u0634\u06a9\u0631\u06cc\u06c1\u06d4 "],
+    kbIntro: "",
+    translationUnavailable: "",
+    sourceLabel: "",
+    topics: {}
+  },
   ca: {
     urgent: "Aquest símptoma requereix valoració avui mateix. Contacta ara amb el teu equip de TBC; si empitjora o tens febre alta o dificultat per respirar, acut a urgències. No et prenguis la propera dosi fins parlar amb el professional.",
     moderate: "Pot tractar-se d'un efecte relacionat amb el tractament. Contacta amb el teu equip de referència en les properes 24–48h. No suspenguis la medicació pel teu compte.",
@@ -182,7 +223,7 @@ const REPLY_STRINGS = {
     greeting: "Hola! Sóc aquí per ajudar-te durant el tractament. Explica'm què necessites (un símptoma que has notat, un dubte sobre la medicació, els efectes secundaris, etc.) i mirem de trobar-te una resposta.",
     infoDefault: "Gràcies pel missatge. Un professional el revisarà. Contacta de seguida si tens sang a l'esput, febre alta, dificultat per respirar o color groguenc a pell o ulls.",
     ack: ["D'acord. ", "Entès. ", "Gràcies per explicar-ho. ", "Perfecte, seguim. ", "Molt bé. "],
-    kbIntro: "📚 Amb tot el que m'has explicat, això és el que diuen els documents de referència: ",
+    kbIntro: "",
     translationUnavailable: " (no s'ha pogut traduir ara mateix, text original en anglès: ",
     sourceLabel: " (Font: ",
     topics: {
@@ -345,7 +386,7 @@ const REPLY_STRINGS = {
     greeting: "¡Hola! Estoy aquí para ayudarte durante el tratamiento. Cuéntame qué necesitas (un síntoma que hayas notado, una duda sobre la medicación, los efectos secundarios, etc.) y buscamos la respuesta.",
     infoDefault: "Gracias por el mensaje. Un profesional lo revisará. Contacta enseguida si tienes sangre en el esputo, fiebre alta, dificultad para respirar o color amarillento en piel u ojos.",
     ack: ["De acuerdo. ", "Entendido. ", "Gracias por explicarlo. ", "Perfecto, seguimos. ", "Muy bien. "],
-    kbIntro: "📚 Con todo lo que me has explicado, esto es lo que dicen los documentos de referencia: ",
+    kbIntro: "",
     translationUnavailable: " (no se ha podido traducir ahora mismo, texto original en inglés: ",
     sourceLabel: " (Fuente: ",
     topics: {
@@ -656,75 +697,23 @@ const TOPIC_SEARCH_SEED = {
 const LOW_VALUE_TITLE_PATTERN = /surveillance|epidemiolog|global tuberculosis report|annual report|evaluaci[oó]n|vigilancia|informe de vigil/i;
 
 async function buildKbAnswer(queryText, lang, topicId){
-  if(!window.TB_KB) return null;
   try{
-    await window.TB_KB.loadIndex();
-  }catch(e){
-    console.warn('Base de coneixement TB no disponible', e);
-    return null;
-  }
-  try{
-    // Si sabem el tema, ancorem la cerca amb paraules clau clíniques en anglès
-    // (repetides per pesar més) perquè el resultat vagi al gra correcte encara
-    // que el text del pacient no coincideixi literalment amb el document.
-    const seed = topicId && TOPIC_SEARCH_SEED[topicId];
-    const effectiveQuery = seed ? (seed + ' ' + seed + ' ' + queryText) : queryText;
-    // Demanem uns quants candidats per paraules clau i descartem els que
-    // vinguin d'informes estadístics (encara que hagin puntuat més alt).
-    const candidates = window.TB_KB.search(effectiveQuery, 8);
-    if(!candidates.length) return null;
-    const filtered = candidates.filter(r => !LOW_VALUE_TITLE_PATTERN.test(r.title || ''));
-    const pool = filtered.length ? filtered : candidates;
-
-    // Pas addicional (IA real, gratuïta): si el model d'embeddings s'ha pogut
-    // carregar al navegador, reordenem `pool` per significat real, no només
-    // per paraules coincidents. Traduïm primer la pregunta a l'anglès perquè
-    // es pugui comparar amb els documents. Si qualsevol part d'això falla,
-    // seguim amb l'ordre de search() sense trencar la resposta.
-    let best = pool[0];
-    if(window.TB_KB.semanticRerank){
-      const englishQuery = ((seed || '') + '. ' + (await translateToEnglish(queryText, lang) || queryText)).trim();
-      const reranked = await window.TB_KB.semanticRerank(englishQuery, pool);
-      if(reranked && reranked.length) best = reranked[0];
-    }
-
-    // Filtre de confiança: si el model semàntic ha pogut comparar el
-    // significat i la millor coincidència encara és fluixa, és més honest
-    // no mostrar cap fragment (deixem que el missatge genèric de seguretat
-    // ho reculli) que ensenyar un text que sona a resposta "d'una altra
-    // conversa". Sense aquest pas, preguntes com "necesito medicación" (una
-    // petició, no una pregunta informativa) acabaven mostrant criteris de
-    // diagnòstic escrits per a personal sanitari, no per a pacients.
-    if(typeof best.semScore === 'number' && best.semScore < 0.32){
+    const res = await fetch('/api/patient-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: queryText, lang: lang || 'es' }),
+    });
+    if(!res.ok) return null;
+    const data = await res.json();
+    const text = (data.response || '').trim();
+    if(!text) return null;
+    if(text.startsWith('No encuentro esta informacion') || text.startsWith('No encuentro esta información')){
       return null;
     }
-
     const s = REPLY_STRINGS[lang] || REPLY_STRINGS.es;
-    const plain = best.snippet.replace(/<[^>]+>/g,'').trim();
-    const short = plain.length > 220 ? plain.slice(0,220)+'…' : plain;
-
-    // Pas addicional (IA generativa, gratuïta): reformulem el fragment en
-    // llenguatge planer ABANS de traduir. El model només reescriu el text ja
-    // trobat, no en pot afegir de nou (veure comprovacions a buscador.js).
-    // Si no es pot carregar o el resultat no sembla fiable, es fa servir el
-    // fragment original sense cap canvi.
-    let textToTranslate = short;
-    if(window.TB_KB.simplifyEnglishText){
-      const simplified = await window.TB_KB.simplifyEnglishText(short);
-      if(simplified) textToTranslate = simplified;
-    }
-
-    const translated = await translateSnippet(textToTranslate, lang);
-    const body = translated || (textToTranslate + s.translationUnavailable + ')');
-    // Font del document: només títol + enllaç (no l'apartat exacte, això
-    // requeriria una IA que "entengués" l'estructura del document). Es posa
-    // al final, en una frase apart, per no barrejar-la amb l'explicació.
-    const sourceText = best.source_url && best.title
-      ? (s.sourceLabel + best.title + (best.year ? ', ' + best.year : '') + ': ' + best.source_url + ')')
-      : '';
-    return s.kbIntro + body + sourceText;
+    return s.kbIntro + text;
   }catch(e){
-    console.warn('Cerca a la base de coneixement ha fallat', e);
+    console.warn('Consulta a TBC-AI ha fallat', e);
     return null;
   }
 }
@@ -762,6 +751,17 @@ async function advanceKbConversation(p, text, triageResult){
     const maybeNewTopicId = detectKbTopicId(text);
     if(!currentStrings){ delete p.kbFlow; return null; }
 
+    // Si el pacient escriu una pregunta clarament independent (acaba en '?'
+    // o comenca amb una paraula interrogativa habitual) mentre hi ha un flux
+    // de seguiment obert, no l'interpretem com a resposta a la pregunta
+    // anterior: cancel·lem el flux i responem la pregunta nova.
+    const looksLikeNewQuestion = /[?？]\s*$/.test(text.trim()) ||
+      /^\s*(que|qué|com|cómo|quan|cuándo|cuando|on|dónde|donde|per que|per qu|porque|por que|por qué|puc|puedo|es cert|es cierto|hi ha|hay|existe|existeix|quin|cuál|cual|quins|cuáles|cuales)(\s|$)/i.test(text.trim());
+    if(looksLikeNewQuestion){
+      delete p.kbFlow;
+      return await buildKbAnswer(text, detectLang(text), null);
+    }
+
     if(maybeNewTopicId && maybeNewTopicId !== p.kbFlow.topicId){
       // El pacient ha canviat de tema enmig de la conversa: seguim el nou fil.
       const newLang = detectLang(text);
@@ -787,7 +787,13 @@ async function advanceKbConversation(p, text, triageResult){
   const topicId = detectKbTopicId(text);
   if(topicId){
     const lang = detectLang(text);
-    const strings = REPLY_STRINGS[lang].topics[topicId];
+    const strings = (REPLY_STRINGS[lang] && REPLY_STRINGS[lang].topics[topicId]) || null;
+    // En arabe/urdu no hay flujo de preguntas guiadas por tema (topics vacio a
+    // proposito, ver comentario en REPLY_STRINGS): en ese caso saltamos
+    // directamente a la IA en vez de abrir un flujo que no existe.
+    if(!strings){
+      return await buildKbAnswer(text, lang, null);
+    }
     p.kbFlow = { topicId, lang, step: 0, originalText: text, answers: [] };
     return strings.opener + strings.questions[0];
   }
@@ -963,8 +969,13 @@ function bindNewPatientForm(){
 
 async function sendMessage(){
   const input = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
   const text = input.value.trim();
   if(!text) return;
+  // Bloqueig immediat: evita que un doble clic o un Enter repetit mentre
+  // s'espera resposta enviin el mateix missatge diverses vegades.
+  if(sendBtn && sendBtn.disabled) return;
+
   const p = patients[currentPatientId];
   p.messages.push({from:'patient', text, time:new Date().toISOString()});
   const tr = triage(text);
@@ -990,19 +1001,48 @@ async function sendMessage(){
     p.messages.push({from:'bot', text:reply, time:new Date().toISOString(), level: tr.level});
   }
 
-  // Conversa amb la base de coneixement: pregunta de seguiment o resposta final.
-  const kbText = await advanceKbConversation(p, text, tr);
-  if(kbText){
-    p.messages.push({from:'bot', text:kbText, time:new Date().toISOString(), level:'info'});
-  } else if(tr.level==='info'){
-    // Només mostrem l'avís genèric quan no hi ha cap resposta conversacional
-    // més concreta a oferir, per no repetir sempre el mateix text llarg.
-    const reply = botReply(tr, lang);
-    p.messages.push({from:'bot', text:reply, time:new Date().toISOString(), level: tr.level});
-  }
-  await savePatient(p);
   input.value='';
   renderChatView();
+  showThinkingIndicator();
+  if(sendBtn) sendBtn.disabled = true;
+  if(input) input.disabled = true;
+
+  try{
+    // Conversa amb la base de coneixement: pregunta de seguiment o resposta final.
+    const kbText = await advanceKbConversation(p, text, tr);
+    if(kbText){
+      p.messages.push({from:'bot', text:kbText, time:new Date().toISOString(), level:'info'});
+    } else if(tr.level==='info'){
+      // Només mostrem l'avís genèric quan no hi ha cap resposta conversacional
+      // més concreta a oferir, per no repetir sempre el mateix text llarg.
+      const reply = botReply(tr, lang);
+      p.messages.push({from:'bot', text:reply, time:new Date().toISOString(), level: tr.level});
+    }
+    await savePatient(p);
+  } finally {
+    hideThinkingIndicator();
+    const sendBtn2 = document.getElementById('sendBtn');
+    const input2 = document.getElementById('msgInput');
+    if(sendBtn2) sendBtn2.disabled = false;
+    if(input2) input2.disabled = false;
+    renderChatView();
+  }
+}
+
+function showThinkingIndicator(){
+  const chatArea = document.getElementById('chatArea');
+  if(!chatArea) return;
+  const el = document.createElement('div');
+  el.id = 'thinkingIndicator';
+  el.style.cssText = 'padding:10px 14px;color:#5B6560;font-style:italic;font-size:14px;';
+  el.textContent = 'Pensant la resposta...';
+  chatArea.appendChild(el);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function hideThinkingIndicator(){
+  const el = document.getElementById('thinkingIndicator');
+  if(el) el.remove();
 }
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

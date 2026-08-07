@@ -194,3 +194,25 @@
 
   .footnote{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:8px;line-height:1.5;}
   .section-title{font-family:'Fraunces',serif;font-size:15px;font-weight:600;margin:22px 0 10px;color:var(--teal-dark);}
+
+
+/* --- Mejoras de integracion con el panell local --- */
+.back-link {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #5B6560;
+  text-decoration: none;
+  margin-bottom: 8px;
+  transition: color 0.15s ease;
+}
+.back-link:hover { color: #1F4B4C; }
+
+button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid #1F4B4C;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
