@@ -1,0 +1,29 @@
+{
+  "drug": "bedaquiline",
+  "cardiac_risk": "QTc prolongation",
+  "monitoring": [
+    "baseline ECG",
+    "at least monthly ECG per WHO product information",
+    "K/Ca/Mg at baseline; correct abnormalities"
+  ],
+  "high_risk_signals": [
+    "QTcF >500 ms confirmed",
+    "clinically significant ventricular arrhythmia",
+    "syncope"
+  ],
+  "interaction_topics": [
+    "clofazimine",
+    "delamanid",
+    "moxifloxacin/fluoroquinolones",
+    "other QT-prolonging non-TB medicines",
+    "CYP3A4 interactions"
+  ],
+  "evidence_ids": [
+    "TB-G012",
+    "TB-A039",
+    "TB-A040",
+    "TB-A041",
+    "TB-A043",
+    "TB-A044"
+  ]
+}

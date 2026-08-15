@@ -1240,8 +1240,7 @@ if(useFirestore){
   });
 }
 
-/* Precarrega la base de coneixement TB (kb/buscador.js) en segon pla,
-   perquè estigui llesta quan el pacient escrigui el primer missatge. */
-if(window.TB_KB){
-  window.TB_KB.loadIndex().catch(e=> console.warn('Base de coneixement TB no disponible:', e));
-}
+/* La base de coneixement TB (kb/buscador.js) ja no es precarrega:
+   buildKbAnswer() usa /api/patient-chat en comptes de window.TB_KB.
+   Els fitxers de kb/ es conserven per si es vol tornar a usar el
+   buscador estatic com a alternativa, pero no es carreguen per defecte. */

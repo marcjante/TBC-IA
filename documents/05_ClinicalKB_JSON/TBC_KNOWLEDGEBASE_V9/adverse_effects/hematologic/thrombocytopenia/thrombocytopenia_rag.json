@@ -1,0 +1,17 @@
+{
+  "topic": "thrombocytopenia",
+  "parent_topic": "linezolid-associated myelosuppression",
+  "drug": "linezolid",
+  "regimens": [
+    "BPaL",
+    "BPaLM"
+  ],
+  "evidence_ids": [
+    "TB-G010",
+    "TB-A033",
+    "TB-A034",
+    "TB-A035",
+    "TB-A036"
+  ],
+  "rag_instruction": "Retrieve current CBC values, symptoms, baseline counts, duration/dose of linezolid and current guideline before suggesting clinical action."
+}

@@ -1,0 +1,53 @@
+{
+  "topic_id": "AE_PERIPHERAL_NEUROPATHY",
+  "topic": "Peripheral neuropathy during tuberculosis treatment",
+  "associated_drugs": [
+    "isoniazid",
+    "linezolid",
+    "cycloserine/terizidone"
+  ],
+  "common_patient_descriptions": [
+    "tingling",
+    "pins and needles",
+    "numbness",
+    "burning pain",
+    "reduced sensation",
+    "difficulty walking"
+  ],
+  "safety_logic": {
+    "urgent_or_prompt_assessment": [
+      "rapidly progressive weakness",
+      "new gait impairment",
+      "severe sensory loss",
+      "visual symptoms during linezolid therapy",
+      "new confusion, hallucinations, severe depression or suicidality with cycloserine/terizidone"
+    ],
+    "non_emergency_but_needs_review": [
+      "new persistent tingling or numbness",
+      "burning neuropathic pain",
+      "progressive sensory symptoms"
+    ]
+  },
+  "rag_rules": [
+    "Do not assume all neuropathy in a person with TB is drug-induced.",
+    "For linezolid, pyridoxine should not be presented as proven prevention of linezolid neuropathy.",
+    "For isoniazid, retrieve current guideline recommendations for pyridoxine prophylaxis and treatment rather than relying on model memory.",
+    "For cycloserine/terizidone, evaluate neuropsychiatric symptoms separately from peripheral neuropathy.",
+    "Do not autonomously instruct patients to stop or restart anti-TB medication; route medication changes to the treating team unless an official patient-safety pathway explicitly says otherwise."
+  ],
+  "evidence_ids": [
+    "TB-G001",
+    "TB-G006",
+    "TB-A022",
+    "TB-A023",
+    "TB-A024",
+    "TB-A025",
+    "TB-A026",
+    "TB-A027",
+    "TB-A028",
+    "TB-A029",
+    "TB-A030",
+    "TB-A031",
+    "TB-A032"
+  ]
+}

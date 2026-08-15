@@ -1,0 +1,72 @@
+{
+  "topic_id": "AE_QT_PROLONGATION",
+  "topic": "QT prolongation and cardiac safety during drug-resistant tuberculosis treatment",
+  "associated_drugs": [
+    "bedaquiline",
+    "moxifloxacin",
+    "clofazimine",
+    "delamanid",
+    "other fluoroquinolones with QT effect"
+  ],
+  "key_clinical_concepts": {
+    "preferred_correction": "QTcF (Fridericia), particularly in TB drug-safety monitoring",
+    "prolonged": "WHO guidance cited in this repository considers QTcF >450 ms prolonged.",
+    "high_risk_threshold": "QTcF >=500 ms is associated with increased risk of potentially life-threatening arrhythmia.",
+    "symptoms_requiring_prompt_assessment": [
+      "syncope",
+      "near-syncope",
+      "new palpitations",
+      "sustained dizziness",
+      "chest discomfort with arrhythmic symptoms"
+    ],
+    "risk_factors": [
+      "baseline QT prolongation",
+      "congenital long-QT history",
+      "bradyarrhythmia",
+      "hypokalaemia",
+      "hypomagnesaemia",
+      "hypocalcaemia",
+      "hypothyroidism",
+      "multiple QT-prolonging drugs",
+      "other interacting medicines"
+    ]
+  },
+  "monitoring": {
+    "baseline": [
+      "ECG",
+      "potassium",
+      "calcium",
+      "magnesium",
+      "review concomitant medicines"
+    ],
+    "who_general_ecg_schedule": "Ideally baseline, week 2, week 4, then every 4 weeks while receiving combinations of QT-prolonging TB drugs, plus additional ECGs when clinically indicated.",
+    "bedaquiline_product_info": "ECG before treatment and at least monthly; correct potassium, calcium and magnesium abnormalities before treatment and monitor electrolytes if QT is prolonged.",
+    "symptom_trigger": "If syncope occurs, obtain ECG and urgent clinical assessment."
+  },
+  "interaction_logic": [
+    "QT-prolonging effects can be additive when bedaquiline is combined with clofazimine, delamanid, moxifloxacin or other QT-prolonging medicines.",
+    "Do not classify a combination as contraindicated solely because two QT-prolonging drugs are present; current DR-TB regimens may intentionally combine them with monitoring.",
+    "Review non-TB QT-prolonging medicines and avoid unnecessary combinations when possible.",
+    "Correct potassium, magnesium and calcium abnormalities and evaluate other reversible causes."
+  ],
+  "safety_rules": [
+    "Do not diagnose clinically significant QT prolongation from palpitations alone; retrieve ECG/QTcF.",
+    "Syncope or near-syncope during a QT-prolonging regimen is a high-priority symptom.",
+    "QTcF >=500 ms requires prompt clinician-led review of QT-prolonging drugs and reversible causes; do not instruct the patient to independently restart therapy.",
+    "Differentiate mild/asymptomatic QT changes from ventricular arrhythmia or syncope.",
+    "Do not use Bazett-corrected QT interchangeably with QTcF when applying WHO QTcF thresholds.",
+    "Medication changes must follow the current regimen-specific guideline and treating team."
+  ],
+  "evidence_ids": [
+    "TB-G011",
+    "TB-G012",
+    "TB-G010",
+    "TB-A039",
+    "TB-A040",
+    "TB-A041",
+    "TB-A042",
+    "TB-A043",
+    "TB-A044",
+    "TB-A045"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "topic_id": "TB_RENAL_IMPAIRMENT",
+  "topic": "Tuberculosis treatment in renal impairment and hemodialysis",
+  "core_rules": [
+    "Always retrieve creatinine clearance/eGFR, dialysis status, weight, age, regimen and exact medicine before giving dose-specific information.",
+    "Do not reduce milligram dose indiscriminately; for several anti-TB drugs, guidance changes dosing interval rather than simply lowering each dose.",
+    "For hemodialysis, timing relative to dialysis matters and must be retrieved from current guidance.",
+    "Coordinate management with nephrology/TB specialists for severe renal impairment or dialysis.",
+    "Do not extrapolate dosing between levofloxacin and moxifloxacin; renal adjustment requirements differ.",
+    "Do not assume all renal dysfunction is caused by TB drugs; review baseline CKD, dehydration, sepsis and other nephrotoxins."
+  ],
+  "who_ds_tb_crcl_lt_30": {
+    "pyrazinamide": "25–35 mg/kg per dose, three times weekly after dialysis",
+    "ethambutol": "15–25 mg/kg per dose, three times weekly after dialysis",
+    "moxifloxacin": "WHO states no renal dose adjustment is required in this DS-TB context",
+    "rifapentine": "WHO states no renal dose adjustment is required in this DS-TB context",
+    "source": "TB-G017"
+  },
+  "levofloxacin": {
+    "note": "WHO DR-TB guidance requires renal dose adjustment when creatinine clearance is reduced; exact threshold depends on regimen/guidance context and must be retrieved.",
+    "sources": [
+      "TB-G019",
+      "TB-A054"
+    ]
+  },
+  "monitoring": {
+    "creatinine": "WHO recommends close monitoring, often weekly or every 2 weeks in chronic renal failure.",
+    "electrolytes": "Weekly monitoring is recommended in CRF because electrolyte disturbances are frequent.",
+    "ECG": "Consider because electrolyte abnormalities and QT-prolonging drugs may coexist."
+  },
+  "dialysis": {
+    "general": "Several anti-TB medicines are preferentially administered after hemodialysis; exact drug-specific schedule must be retrieved.",
+    "foundational_pk": "Older PK data show pyrazinamide is substantially dialyzed; retained as background evidence only.",
+    "sources": [
+      "TB-G017",
+      "TB-G020",
+      "TB-A055"
+    ]
+  },
+  "evidence_ids": [
+    "TB-G017",
+    "TB-G018",
+    "TB-G019",
+    "TB-G020",
+    "TB-A054",
+    "TB-A055"
+  ]
+}

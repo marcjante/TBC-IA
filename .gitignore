@@ -1,5 +1,8 @@
-# Documentos clinicos - no versionar
-documents/
+# Documentos clinicos - no versionar (excepto la Knowledge Base JSON,
+# que no son PDF con copyright sino fichas propias con citas bibliograficas)
+documents/*
+!documents/05_ClinicalKB_JSON/
+!documents/05_ClinicalKB_JSON/**
 
 # Base vectorial - se regenera desde documents/
 vector_db/
@@ -18,3 +21,8 @@ backend/main_trunc.py
 
 # Sistema
 .DS_Store
+.env
+
+# Archivos de prueba temporales
+*_TEST.json
+tbc-ai-auditoria.zip

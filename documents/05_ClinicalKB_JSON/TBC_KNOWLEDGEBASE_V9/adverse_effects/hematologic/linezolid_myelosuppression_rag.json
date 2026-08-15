@@ -1,0 +1,68 @@
+{
+  "topic_id": "AE_LINEZOLID_MYELOSUPPRESSION",
+  "topic": "Linezolid-associated myelosuppression during tuberculosis treatment",
+  "associated_drug": "linezolid",
+  "regimens": [
+    "BPaL",
+    "BPaLM",
+    "other linezolid-containing DR-TB regimens"
+  ],
+  "components": {
+    "anemia": {
+      "patient_descriptions": [
+        "unusual fatigue",
+        "weakness",
+        "shortness of breath on exertion",
+        "dizziness",
+        "pallor"
+      ],
+      "laboratory_marker": "hemoglobin / red-cell indices",
+      "note": "Symptoms are nonspecific; tuberculosis itself and nutritional or bleeding causes must also be considered."
+    },
+    "thrombocytopenia": {
+      "patient_descriptions": [
+        "easy bruising",
+        "petechiae",
+        "nosebleeds",
+        "gum bleeding",
+        "unusual or persistent bleeding"
+      ],
+      "laboratory_marker": "platelet count",
+      "note": "Bleeding symptoms or marked thrombocytopenia require prompt clinical assessment."
+    },
+    "neutropenia": {
+      "patient_descriptions": [
+        "fever",
+        "chills",
+        "new infection symptoms",
+        "mouth ulcers"
+      ],
+      "laboratory_marker": "absolute neutrophil count / white-cell differential",
+      "note": "Fever with significant neutropenia can be clinically urgent."
+    }
+  },
+  "monitoring": {
+    "baseline": "CBC including hemoglobin, white-cell differential and platelets before treatment.",
+    "who_initial_schedule": "Because of the anemia risk with linezolid, WHO guidance states Hb should be checked at least every 2 weeks for the first month, then monthly during linezolid exposure; CBC should be more frequent when clinically indicated or baseline Hb/neutrophils/platelets are low.",
+    "timing_note": "Myelosuppression is dose/exposure related and often appears during the first 1–3 months of linezolid exposure."
+  },
+  "safety_rules": [
+    "Never infer anemia, thrombocytopenia or neutropenia from symptoms alone; retrieve CBC results and clinical context.",
+    "Do not tell a patient to independently reduce, interrupt or restart linezolid.",
+    "If significant myelosuppression develops, retrieve current WHO/clinical guideline management pathway and route medication changes to the treating team.",
+    "Evaluate alternative causes of anemia, cytopenias and infection rather than automatically attributing every abnormal count to linezolid.",
+    "For fever plus known/severe neutropenia, escalate according to local urgent-care pathway.",
+    "For active or significant bleeding with thrombocytopenia, escalate promptly."
+  ],
+  "key_evidence_ids": [
+    "TB-G010",
+    "TB-A023",
+    "TB-A024",
+    "TB-A033",
+    "TB-A034",
+    "TB-A035",
+    "TB-A036",
+    "TB-A037",
+    "TB-A038"
+  ]
+}

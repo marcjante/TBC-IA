@@ -1,0 +1,16 @@
+{
+  "drug": "delamanid",
+  "cardiac_risk": "QT prolongation",
+  "monitoring_note": "Treat as a QT-prolonging drug in combined DR-TB regimens; ECG monitoring and reversible-risk-factor review are required.",
+  "interaction_topics": [
+    "bedaquiline",
+    "clofazimine",
+    "fluoroquinolones",
+    "other QT-prolonging medicines"
+  ],
+  "evidence_ids": [
+    "TB-G011",
+    "TB-G012",
+    "TB-A045"
+  ]
+}

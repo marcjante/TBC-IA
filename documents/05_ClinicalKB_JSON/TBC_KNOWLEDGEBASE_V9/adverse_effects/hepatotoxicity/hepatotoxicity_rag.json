@@ -1,0 +1,58 @@
+{
+  "topic_id": "AE_HEPATOTOXICITY",
+  "topic": "Anti-tuberculosis drug-induced liver injury (AT-DILI)",
+  "associated_drugs": [
+    "isoniazid",
+    "rifampicin/rifampin",
+    "rifapentine",
+    "pyrazinamide"
+  ],
+  "patient_warning_symptoms": [
+    "abdominal pain",
+    "brown/dark urine",
+    "light-colored stools",
+    "fatigue",
+    "fever lasting 3 or more days",
+    "flu-like symptoms",
+    "loss of appetite",
+    "nausea",
+    "vomiting",
+    "yellow skin or eyes"
+  ],
+  "safety_classification": "Potentially serious adverse reaction",
+  "rag_rule": "For patient-facing clinical questions, retrieve current guideline/official safety guidance first; do not generate medication-stop/rechallenge instructions from model memory.",
+  "risk_factor_topics_to_retrieve": [
+    "baseline liver disease",
+    "viral hepatitis",
+    "alcohol consumption",
+    "NAT2 slow acetylator phenotype",
+    "concomitant hepatotoxic drugs",
+    "baseline ALT/AST abnormalities"
+  ],
+  "management_topics_to_retrieve": [
+    "clinical assessment",
+    "liver function testing",
+    "criteria for treatment interruption",
+    "exclusion of alternative causes",
+    "drug reintroduction/rechallenge",
+    "monitoring after rechallenge"
+  ],
+  "evidence_ids": [
+    "TB-G001",
+    "TB-G006",
+    "TB-G008",
+    "TB-A004",
+    "TB-A011",
+    "TB-A012",
+    "TB-A013",
+    "TB-A014",
+    "TB-A015",
+    "TB-A016",
+    "TB-A017",
+    "TB-A018",
+    "TB-A019",
+    "TB-A020",
+    "TB-A021"
+  ],
+  "source_note": "Patient warning symptoms aligned to CDC adverse-event guidance; clinical management must be retrieved from current guidelines and reviewed by clinicians."
+}

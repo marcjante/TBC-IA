@@ -1,0 +1,18 @@
+{
+  "drug": "clofazimine",
+  "cardiac_risk": "Additive QT prolongation, especially with other QT-prolonging drugs",
+  "other_patient_relevant_effects": [
+    "skin/body-fluid discoloration",
+    "dry skin",
+    "GI intolerance",
+    "photosensitivity"
+  ],
+  "monitoring_note": "Use ECG monitoring when multiple QT-prolonging drugs are part of the regimen.",
+  "evidence_ids": [
+    "TB-G011",
+    "TB-G012",
+    "TB-A041",
+    "TB-A042",
+    "TB-A044"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "drug": "streptomycin",
+  "renal_issue": "Renally eliminated injectable aminoglycoside; dose interval and monitoring must be individualized in renal impairment.",
+  "toxicity_topics": [
+    "ototoxicity",
+    "nephrotoxicity"
+  ],
+  "evidence_ids": [
+    "TB-G018",
+    "TB-G020"
+  ]
+}

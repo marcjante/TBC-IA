@@ -10,6 +10,9 @@ import os
 import hashlib
 import shutil
 import fitz
+from dotenv import load_dotenv
+
+load_dotenv()
 
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
@@ -22,8 +25,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-CHAT_MODEL = "llama3.1:8b"
-EMBED_MODEL = "bge-m3"
+CHAT_MODEL = os.environ.get("TBC_CHAT_MODEL", "llama3.1:8b")
+EMBED_MODEL = os.environ.get("TBC_EMBED_MODEL", "bge-m3")
 COLLECTION_NAME = "tbc_docs"
 CHUNK_SIZE = 2000
 CHUNK_OVERLAP = 300
@@ -175,6 +178,38 @@ TB_KEYWORDS = [
     "neumolog",
 ]
 
+# Patrones que indican que el modelo esta "rellenando" con conocimiento
+# general en vez de limitarse al contexto recuperado (fuga de conocimiento).
+# Union de los patrones detectados historicamente en ambos endpoints de chat;
+# compartida para que un patron nuevo anadido aqui proteja a los dos a la vez.
+LEAK_PATTERNS = [
+    "no contiene informacion especifica",
+    "sin embargo, puedo ofrecerte",
+    "puedo ofrecerte informacion general",
+    "puedo ofrecerte",
+    "puedo darte informacion general",
+    "informacion general sobre",
+    "de manera general,",
+    "por lo general,",
+    "segun mi conocimiento",
+    "el texto proporcionado no",
+    "el contexto no contiene",
+    "no se menciona explicitamente",
+]
+
+
+def normalize_accents(text):
+    t = text.lower()
+    for a, b in [("\u00e1", "a"), ("\u00e9", "e"), ("\u00ed", "i"), ("\u00f3", "o"), ("\u00fa", "u")]:
+        t = t.replace(a, b)
+    return t
+
+
+def detect_generic_knowledge_leak(response_text):
+    normalized = normalize_accents(response_text)
+    return any(normalize_accents(pat) in normalized for pat in LEAK_PATTERNS)
+
+
 def is_tb_related(text):
     normalized = text.lower()
     normalized = normalized.replace("?", " ").replace("!", " ").replace(".", " ").replace(",", " ")
@@ -199,6 +234,7 @@ REGLAS OBLIGATORIAS:
 class ChatRequest(BaseModel):
     message: str
     top_k: int = 8
+    debug: bool = False
 
 
 MIN_ALNUM_CHARS = 40
@@ -332,42 +368,32 @@ def chat(request: ChatRequest):
     no_info_phrase = "No encuentro esta informaci"
     CANNED_NO_INFO = "No encuentro esta informacion en los documentos disponibles."
 
-    LEAK_PATTERNS = [
-        "no contiene informacion especifica",
-        "no contiene informaci\u00f3n especifica",
-        "sin embargo, puedo ofrecerte",
-        "puedo ofrecerte informacion general",
-        "informacion general sobre",
-        "de manera general,",
-        "por lo general,",
-        "seg\u00fan mi conocimiento",
-        "segun mi conocimiento",
-        "el texto proporcionado no",
-        "el contexto no contiene",
-        "no se menciona expl\u00edcitamente",
-        "no se menciona explicitamente",
-    ]
+    leaked = detect_generic_knowledge_leak(final_response)
 
-    def normalize_for_check(text):
-        t = text.lower()
-        for a, b in [("\u00e1", "a"), ("\u00e9", "e"), ("\u00ed", "i"), ("\u00f3", "o"), ("\u00fa", "u")]:
-            t = t.replace(a, b)
-        return t
-
-    normalized_response = normalize_for_check(final_response)
-    leaked = any(pat in normalize_for_check(pat) and normalize_for_check(pat) in normalized_response for pat in LEAK_PATTERNS)
-    leaked = any(normalize_for_check(pat) in normalized_response for pat in LEAK_PATTERNS)
-
-    if final_response.strip().startswith(no_info_phrase):
+    # Se busca la frase fija en cualquier parte de la respuesta, no solo al
+    # principio: el modelo a veces la antepone con texto propio (ej. "La
+    # respuesta es: No encuentro..."), lo que antes hacia que no se vaciaran
+    # las fuentes aunque el propio modelo diga que no sabe la respuesta.
+    if no_info_phrase in final_response:
+        final_response = CANNED_NO_INFO
         sources_used = []
     elif leaked:
         final_response = CANNED_NO_INFO
         sources_used = []
 
-    return {
+    result = {
         "response": final_response,
         "sources": sources_used,
     }
+    if request.debug:
+        result["debug_info"] = {
+            "model": CHAT_MODEL,
+            "top_k": request.top_k,
+            "top1_distance": distances[0] if distances else None,
+            "has_keyword": has_keyword,
+            "fragments_retrieved": len(fragments),
+        }
+    return result
 
 
 @app.post("/api/upload")
@@ -413,6 +439,7 @@ REGLAS OBLIGATORIAS:
 class PatientChatRequest(BaseModel):
     message: str
     lang: str = "es"
+    debug: bool = False
 
 
 @app.post("/api/patient-chat")
@@ -500,11 +527,7 @@ def patient_chat(request: PatientChatRequest):
     ]
     said_no_info = any(v in normalized_check for v in no_info_variants)
 
-    leaked = any(pat in normalized_check for pat in [
-        "sin embargo, puedo ofrecerte", "informacion general sobre",
-        "segun mi conocimiento", "de manera general,",
-        "puedo ofrecerte", "puedo darte informacion general",
-    ])
+    leaked = detect_generic_knowledge_leak(final_response)
 
     if said_no_info or leaked:
         final_response = CANNED_NO_INFO_PATIENT
@@ -517,12 +540,20 @@ def patient_chat(request: PatientChatRequest):
     final_response = re.sub(r"\S+\.pdf", "", final_response, flags=re.IGNORECASE)
     final_response = re.sub(r"\s{2,}", " ", final_response).strip()
 
-    return {"response": final_response}
+    result = {"response": final_response}
+    if request.debug:
+        result["debug_info"] = {
+            "model": CHAT_MODEL,
+            "top_k": 8,
+            "top1_distance": distances[0] if distances else None,
+            "has_keyword": has_keyword,
+        }
+    return result
 
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    return """
+    html = """
 <!DOCTYPE html>
 <html lang="ca">
 <head>
@@ -692,7 +723,7 @@ def home():
       <span class="tag clinic">Clinic</span>
       <h2>TBC-AI</h2>
       <p>Assistent sobre guies cliniques de l'OMS, CDC i ECDC, amb cita de font i pagina en cada resposta.</p>
-      <div class="status"><span class="dot"></span>Ollama · qwen2.5:7b</div>
+      <div class="status"><span class="dot"></span>Ollama · {CHAT_MODEL_PLACEHOLDER}</div>
     </a>
   </div>
 
@@ -700,6 +731,7 @@ def home():
 </body>
 </html>
 """
+    return html.replace("{CHAT_MODEL_PLACEHOLDER}", CHAT_MODEL)
 
 
 app.mount("/guides", StaticFiles(directory=GUIDES_DIR, html=True), name="guides")

@@ -1,0 +1,14 @@
+{
+  "drug": "pyrazinamide",
+  "key_adverse_effects": [
+    "hepatotoxicity",
+    "hyperuricemia/gout",
+    "gastrointestinal symptoms"
+  ],
+  "hepatotoxicity_evidence": [
+    "TB-A011",
+    "TB-A012",
+    "TB-A015"
+  ],
+  "rag_note": "Do not confuse expected gastrointestinal effects with possible DILI when systemic/hepatic warning symptoms are present."
+}

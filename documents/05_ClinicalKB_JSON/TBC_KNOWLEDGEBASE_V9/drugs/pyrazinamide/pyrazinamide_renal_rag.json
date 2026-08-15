@@ -1,0 +1,12 @@
+{
+  "drug": "pyrazinamide",
+  "renal_issue": "Requires reduced frequency in severe renal impairment/hemodialysis; WHO DS-TB guidance specifies thrice-weekly dosing after dialysis for CrCl <30 mL/min.",
+  "toxicity_topics": [
+    "hepatotoxicity",
+    "hyperuricemia"
+  ],
+  "evidence_ids": [
+    "TB-G017",
+    "TB-A055"
+  ]
+}

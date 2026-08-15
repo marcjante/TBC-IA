@@ -1,0 +1,24 @@
+{
+  "drug": "isoniazid",
+  "neurologic_adverse_effects": [
+    "peripheral neuropathy",
+    "acute neurotoxicity/seizures in overdose"
+  ],
+  "risk_topics": [
+    "malnutrition",
+    "alcohol use",
+    "HIV",
+    "diabetes",
+    "renal disease",
+    "pregnancy",
+    "older age",
+    "higher exposure"
+  ],
+  "pyridoxine_role": "Guideline-supported prevention in at-risk groups and management of established isoniazid-related neuropathy; use exact dose only when retrieved from current guideline.",
+  "evidence_ids": [
+    "TB-A030",
+    "TB-A031",
+    "TB-A032",
+    "TB-G001"
+  ]
+}

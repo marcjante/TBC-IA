@@ -1,0 +1,755 @@
+[
+  {
+    "id": "QA001",
+    "question": "Estoy tomando etambutol y veo borroso, ¿qué tengo que hacer?",
+    "topic": "optic_toxicity",
+    "drug": "ethambutol",
+    "urgency_flag": "prompt clinical assessment",
+    "evidence_ids": [
+      "TB-G001",
+      "TB-A005",
+      "TB-A006",
+      "TB-A010"
+    ]
+  },
+  {
+    "id": "QA002",
+    "question": "Desde que tomo el tratamiento tengo hormigueo en manos o pies, ¿puede ser por la medicación?",
+    "topic": "neuropathy",
+    "drug": "isoniazid/linezolid",
+    "urgency_flag": "clinical assessment depending severity",
+    "evidence_ids": [
+      "TB-G001",
+      "TB-G006"
+    ]
+  },
+  {
+    "id": "QA003",
+    "question": "Tengo náuseas, vómitos y la orina oscura durante el tratamiento de la tuberculosis.",
+    "topic": "hepatotoxicity",
+    "drug": "multiple",
+    "urgency_flag": "possible serious adverse reaction",
+    "evidence_ids": [
+      "TB-G001",
+      "TB-G008",
+      "TB-A004"
+    ]
+  },
+  {
+    "id": "QA004",
+    "question": "¿Es normal que la orina se vuelva naranja con rifampicina?",
+    "topic": "expected_drug_effect",
+    "drug": "rifampicin",
+    "urgency_flag": "usually non-urgent if isolated",
+    "evidence_ids": [
+      "TB-G001"
+    ]
+  },
+  {
+    "id": "QA005",
+    "question": "¿Qué efectos secundarios puede producir el tratamiento BPaLM?",
+    "topic": "drug_resistant_TB",
+    "drug": "BPaLM",
+    "urgency_flag": "depends on symptom",
+    "evidence_ids": [
+      "TB-G006",
+      "TB-A001",
+      "TB-A002"
+    ]
+  },
+  {
+    "id": "QA006",
+    "question": "Tengo los ojos amarillos durante el tratamiento de la tuberculosis, ¿qué hago?",
+    "topic": "hepatotoxicity",
+    "drug": "multiple",
+    "urgency_flag": "possible serious adverse reaction; prompt clinical assessment",
+    "evidence_ids": [
+      "TB-G001",
+      "TB-A011",
+      "TB-A013"
+    ]
+  },
+  {
+    "id": "QA007",
+    "question": "Estoy tomando isoniazida y me han subido las transaminasas.",
+    "topic": "hepatotoxicity",
+    "drug": "isoniazid",
+    "urgency_flag": "requires clinical interpretation of symptoms, values and guideline thresholds",
+    "evidence_ids": [
+      "TB-A011",
+      "TB-A013",
+      "TB-A017",
+      "TB-A018"
+    ]
+  },
+  {
+    "id": "QA008",
+    "question": "¿Puedo seguir tomando la medicación de la tuberculosis si tengo náuseas y orina oscura?",
+    "topic": "hepatotoxicity",
+    "drug": "multiple",
+    "urgency_flag": "possible serious hepatic adverse reaction; do not give autonomous restart/stop advice without guideline pathway",
+    "evidence_ids": [
+      "TB-G001",
+      "TB-A011",
+      "TB-A013"
+    ]
+  },
+  {
+    "id": "QA009",
+    "question": "Tuve una hepatitis por los fármacos de la tuberculosis. ¿Cómo se vuelve a empezar el tratamiento?",
+    "topic": "rechallenge_after_DILI",
+    "drug": "multiple",
+    "urgency_flag": "specialist-managed decision",
+    "evidence_ids": [
+      "TB-A014",
+      "TB-A011",
+      "TB-A015"
+    ]
+  },
+  {
+    "id": "QA010",
+    "question": "¿El alcohol aumenta el riesgo de daño hepático durante el tratamiento de la tuberculosis?",
+    "topic": "hepatotoxicity_risk",
+    "drug": "multiple",
+    "urgency_flag": "risk counselling",
+    "evidence_ids": [
+      "TB-A019",
+      "TB-A011"
+    ]
+  },
+  {
+    "id": "QA011",
+    "question": "Tengo hepatitis crónica y tuberculosis. ¿El tratamiento puede dañar más el hígado?",
+    "topic": "TB_chronic_liver_disease",
+    "drug": "multiple",
+    "urgency_flag": "higher-risk population; specialist monitoring",
+    "evidence_ids": [
+      "TB-A016",
+      "TB-A011"
+    ]
+  },
+  {
+    "id": "QA012",
+    "question": "¿Por qué algunas personas tienen más riesgo de hepatotoxicidad con isoniazida?",
+    "topic": "NAT2_hepatotoxicity",
+    "drug": "isoniazid",
+    "urgency_flag": "non-urgent educational question",
+    "evidence_ids": [
+      "TB-A017",
+      "TB-A018",
+      "TB-A021"
+    ]
+  },
+  {
+    "id": "QA013",
+    "question": "Desde que tomo isoniazida tengo hormigueo en los pies. ¿Puede ser por el tratamiento?",
+    "topic": "peripheral_neuropathy",
+    "drug": "isoniazid",
+    "urgency_flag": "clinical review if new or persistent; escalate if weakness/progression",
+    "evidence_ids": [
+      "TB-A030",
+      "TB-G001"
+    ]
+  },
+  {
+    "id": "QA014",
+    "question": "¿Para qué sirve la vitamina B6 cuando tomo isoniazida?",
+    "topic": "pyridoxine_prevention",
+    "drug": "isoniazid/pyridoxine",
+    "urgency_flag": "educational",
+    "evidence_ids": [
+      "TB-G001",
+      "TB-A031"
+    ]
+  },
+  {
+    "id": "QA015",
+    "question": "¿Puedo tomar más vitamina B6 si tengo mucho hormigueo?",
+    "topic": "pyridoxine_safety",
+    "drug": "pyridoxine",
+    "urgency_flag": "do not recommend unsupervised dose escalation",
+    "evidence_ids": [
+      "TB-G001"
+    ]
+  },
+  {
+    "id": "QA016",
+    "question": "Estoy tomando linezolid y noto los pies dormidos.",
+    "topic": "linezolid_neuropathy",
+    "drug": "linezolid",
+    "urgency_flag": "prompt clinical assessment; toxicity may progress or persist",
+    "evidence_ids": [
+      "TB-A022",
+      "TB-A025",
+      "TB-A027"
+    ]
+  },
+  {
+    "id": "QA017",
+    "question": "Estoy tomando linezolid y veo borroso.",
+    "topic": "linezolid_optic_neuropathy",
+    "drug": "linezolid",
+    "urgency_flag": "prompt ophthalmologic/clinical assessment",
+    "evidence_ids": [
+      "TB-A023",
+      "TB-G001"
+    ]
+  },
+  {
+    "id": "QA018",
+    "question": "¿La vitamina B6 evita la neuropatía del linezolid?",
+    "topic": "linezolid_pyridoxine",
+    "drug": "linezolid/pyridoxine",
+    "urgency_flag": "educational; avoid unsupported claim",
+    "evidence_ids": [
+      "TB-G001",
+      "TB-A022"
+    ]
+  },
+  {
+    "id": "QA019",
+    "question": "Desde que tomo cicloserina estoy muy triste y tengo pensamientos extraños.",
+    "topic": "cycloserine_neuropsychiatric",
+    "drug": "cycloserine",
+    "urgency_flag": "prompt mental-health/clinical assessment; emergency escalation if self-harm risk",
+    "evidence_ids": [
+      "TB-A029",
+      "TB-G001"
+    ]
+  },
+  {
+    "id": "QA020",
+    "question": "¿La cicloserina puede causar alucinaciones o cambios de comportamiento?",
+    "topic": "cycloserine_neuropsychiatric",
+    "drug": "cycloserine",
+    "urgency_flag": "clinical review if symptoms present",
+    "evidence_ids": [
+      "TB-A029",
+      "TB-G001"
+    ]
+  },
+  {
+    "id": "QA021",
+    "question": "Tengo diabetes y tomo linezolid o isoniazida. ¿Tengo más riesgo de neuropatía?",
+    "topic": "neuropathy_risk_factors",
+    "drug": "linezolid/isoniazid",
+    "urgency_flag": "risk counselling and monitoring",
+    "evidence_ids": [
+      "TB-G001",
+      "TB-A022"
+    ]
+  },
+  {
+    "id": "QA022",
+    "question": "Estoy tomando linezolid y estoy mucho más cansado y mareado. ¿Puede ser anemia?",
+    "topic": "linezolid_anemia",
+    "drug": "linezolid",
+    "urgency_flag": "needs CBC/clinical assessment; escalate if severe dyspnea, syncope or instability",
+    "evidence_ids": [
+      "TB-G010",
+      "TB-A033",
+      "TB-A034"
+    ]
+  },
+  {
+    "id": "QA023",
+    "question": "Me han bajado la hemoglobina tomando BPaL/BPaLM. ¿Qué significa?",
+    "topic": "linezolid_anemia",
+    "drug": "linezolid",
+    "urgency_flag": "clinical review and CBC trend; medication decisions by treating team",
+    "evidence_ids": [
+      "TB-G010",
+      "TB-A023",
+      "TB-A024",
+      "TB-A033"
+    ]
+  },
+  {
+    "id": "QA024",
+    "question": "Me salen morados y puntitos rojos mientras tomo linezolid.",
+    "topic": "thrombocytopenia",
+    "drug": "linezolid",
+    "urgency_flag": "prompt CBC/clinical assessment; urgent if active or significant bleeding",
+    "evidence_ids": [
+      "TB-G010",
+      "TB-A033",
+      "TB-A034",
+      "TB-A035"
+    ]
+  },
+  {
+    "id": "QA025",
+    "question": "Tengo las plaquetas bajas con linezolid. ¿Tengo que dejarlo?",
+    "topic": "thrombocytopenia",
+    "drug": "linezolid",
+    "urgency_flag": "do not advise autonomous interruption; clinician must grade severity and follow regimen guidance",
+    "evidence_ids": [
+      "TB-G010",
+      "TB-A034",
+      "TB-A035"
+    ]
+  },
+  {
+    "id": "QA026",
+    "question": "Tengo fiebre y me han dicho que tengo los neutrófilos bajos durante el tratamiento.",
+    "topic": "neutropenia",
+    "drug": "linezolid/other",
+    "urgency_flag": "potentially urgent, especially with significant neutropenia",
+    "evidence_ids": [
+      "TB-G010",
+      "TB-A033"
+    ]
+  },
+  {
+    "id": "QA027",
+    "question": "¿Cada cuánto tienen que hacerme un hemograma si tomo linezolid?",
+    "topic": "cbc_monitoring",
+    "drug": "linezolid",
+    "urgency_flag": "educational; answer from current WHO regimen guidance",
+    "evidence_ids": [
+      "TB-G010"
+    ]
+  },
+  {
+    "id": "QA028",
+    "question": "¿La anemia por linezolid aparece al principio o después de varios meses?",
+    "topic": "linezolid_myelosuppression_timing",
+    "drug": "linezolid",
+    "urgency_flag": "educational",
+    "evidence_ids": [
+      "TB-G010",
+      "TB-A033",
+      "TB-A034"
+    ]
+  },
+  {
+    "id": "QA029",
+    "question": "¿BPaL o BPaLM pueden bajar las células de la sangre?",
+    "topic": "BPaL_BPaLM_myelosuppression",
+    "drug": "linezolid",
+    "urgency_flag": "educational plus symptom-triggered assessment",
+    "evidence_ids": [
+      "TB-G010",
+      "TB-A023",
+      "TB-A024",
+      "TB-A037"
+    ]
+  },
+  {
+    "id": "QA030",
+    "question": "Estoy tomando bedaquilina y noto palpitaciones. ¿Puede ser por el tratamiento?",
+    "topic": "QT_cardiotoxicity",
+    "drug": "bedaquiline",
+    "urgency_flag": "prompt clinical assessment and ECG, especially if persistent or accompanied by dizziness/syncope",
+    "evidence_ids": [
+      "TB-G011",
+      "TB-G012",
+      "TB-A039"
+    ]
+  },
+  {
+    "id": "QA031",
+    "question": "Me he desmayado mientras tomo bedaquilina y clofazimina.",
+    "topic": "QT_syncope",
+    "drug": "bedaquiline/clofazimine",
+    "urgency_flag": "urgent assessment; ECG required",
+    "evidence_ids": [
+      "TB-G012",
+      "TB-G011"
+    ]
+  },
+  {
+    "id": "QA032",
+    "question": "¿Por qué me hacen electrocardiogramas durante el tratamiento de la tuberculosis resistente?",
+    "topic": "ECG_monitoring",
+    "drug": "multiple QT-prolonging drugs",
+    "urgency_flag": "educational",
+    "evidence_ids": [
+      "TB-G011",
+      "TB-G012"
+    ]
+  },
+  {
+    "id": "QA033",
+    "question": "Me han dicho que tengo un QTc de 510 ms. ¿Es peligroso?",
+    "topic": "QT_high_risk",
+    "drug": "multiple",
+    "urgency_flag": "high-priority clinician review; QTcF >=500 ms threshold must be confirmed and managed",
+    "evidence_ids": [
+      "TB-G011",
+      "TB-G012"
+    ]
+  },
+  {
+    "id": "QA034",
+    "question": "Tengo el potasio bajo y tomo bedaquilina. ¿Importa?",
+    "topic": "QT_electrolytes",
+    "drug": "bedaquiline",
+    "urgency_flag": "clinically relevant reversible QT risk factor; prompt correction/review",
+    "evidence_ids": [
+      "TB-G012"
+    ]
+  },
+  {
+    "id": "QA035",
+    "question": "¿Puedo tomar bedaquilina y moxifloxacino juntos?",
+    "topic": "QT_combination",
+    "drug": "bedaquiline/moxifloxacin",
+    "urgency_flag": "regimen-specific question; combination may be used with monitoring, do not label automatically contraindicated",
+    "evidence_ids": [
+      "TB-G011",
+      "TB-A041"
+    ]
+  },
+  {
+    "id": "QA036",
+    "question": "¿Clofazimina y bedaquilina aumentan juntas el QT?",
+    "topic": "QT_combination",
+    "drug": "clofazimine/bedaquiline",
+    "urgency_flag": "educational plus ECG monitoring",
+    "evidence_ids": [
+      "TB-G012",
+      "TB-A041",
+      "TB-A044"
+    ]
+  },
+  {
+    "id": "QA037",
+    "question": "¿Delamanid puede afectar al corazón?",
+    "topic": "delamanid_QT",
+    "drug": "delamanid",
+    "urgency_flag": "educational; symptoms trigger clinical review",
+    "evidence_ids": [
+      "TB-G011",
+      "TB-A045"
+    ]
+  },
+  {
+    "id": "QA038",
+    "question": "¿Qué minerales tienen que controlar si el QT se alarga?",
+    "topic": "QT_electrolytes",
+    "drug": "multiple",
+    "urgency_flag": "educational",
+    "evidence_ids": [
+      "TB-G012"
+    ]
+  },
+  {
+    "id": "QA039",
+    "question": "Tengo mareo y palpitaciones con BPaLM. ¿Tengo que ir a urgencias?",
+    "topic": "QT_symptoms",
+    "drug": "BPaLM",
+    "urgency_flag": "prompt assessment; urgent if syncope/near-syncope, severe symptoms or instability",
+    "evidence_ids": [
+      "TB-G011",
+      "TB-G012"
+    ]
+  },
+  {
+    "id": "QA040",
+    "question": "Tomo etambutol y ahora no distingo bien el rojo y el verde.",
+    "topic": "optic_toxicity",
+    "drug": "ethambutol",
+    "urgency_flag": "prompt clinical/ophthalmologic assessment",
+    "evidence_ids": [
+      "TB-G013",
+      "TB-A046"
+    ]
+  },
+  {
+    "id": "QA041",
+    "question": "Estoy con linezolid y noto visión borrosa en los dos ojos.",
+    "topic": "linezolid_optic_neuropathy",
+    "drug": "linezolid",
+    "urgency_flag": "prompt clinical/ophthalmologic assessment",
+    "evidence_ids": [
+      "TB-G013",
+      "TB-A023"
+    ]
+  },
+  {
+    "id": "QA042",
+    "question": "¿La rifampicina puede hacer que la píldora anticonceptiva funcione peor?",
+    "topic": "rifamycin_contraception",
+    "drug": "rifampicin",
+    "urgency_flag": "medication counselling; alternative/additional contraception may be needed according to guideline",
+    "evidence_ids": [
+      "TB-G015",
+      "TB-G016",
+      "TB-A050"
+    ]
+  },
+  {
+    "id": "QA043",
+    "question": "Tomo warfarina y me han puesto rifampicina. ¿Pasa algo?",
+    "topic": "rifamycin_anticoagulant",
+    "drug": "rifampicin/warfarin",
+    "urgency_flag": "high-priority medication review and anticoagulation monitoring",
+    "evidence_ids": [
+      "TB-A049",
+      "TB-G016"
+    ]
+  },
+  {
+    "id": "QA044",
+    "question": "Tomo apixabán y voy a empezar rifampicina.",
+    "topic": "rifamycin_DOAC",
+    "drug": "rifampicin/apixaban",
+    "urgency_flag": "high-priority prescriber/pharmacy review; do not adjust independently",
+    "evidence_ids": [
+      "TB-A049"
+    ]
+  },
+  {
+    "id": "QA045",
+    "question": "Tengo VIH, tomo dolutegravir y ahora empiezo rifampicina.",
+    "topic": "TB_HIV_DDI",
+    "drug": "rifampicin/dolutegravir",
+    "urgency_flag": "regimen adjustment required per current WHO guidance; specialist review",
+    "evidence_ids": [
+      "TB-G014"
+    ]
+  },
+  {
+    "id": "QA046",
+    "question": "¿Puedo tomar antidepresivos si estoy con linezolid?",
+    "topic": "linezolid_serotonergic",
+    "drug": "linezolid/antidepressant",
+    "urgency_flag": "individual interaction review; monitor for serotonin toxicity",
+    "evidence_ids": [
+      "TB-A052",
+      "TB-A053"
+    ]
+  },
+  {
+    "id": "QA047",
+    "question": "Estoy con linezolid y antidepresivos y tengo temblor, agitación y fiebre.",
+    "topic": "serotonin_toxicity",
+    "drug": "linezolid/serotonergic",
+    "urgency_flag": "potential serotonin toxicity; urgent clinical assessment",
+    "evidence_ids": [
+      "TB-A052",
+      "TB-A053"
+    ]
+  },
+  {
+    "id": "QA048",
+    "question": "¿Por qué la rifampicina interacciona con tantos medicamentos?",
+    "topic": "rifampicin_induction",
+    "drug": "rifampicin",
+    "urgency_flag": "educational",
+    "evidence_ids": [
+      "TB-A048",
+      "TB-A051"
+    ]
+  },
+  {
+    "id": "QA049",
+    "question": "¿Rifabutina tiene las mismas interacciones que rifampicina?",
+    "topic": "rifamycin_comparison",
+    "drug": "rifabutin/rifampicin",
+    "urgency_flag": "educational; do not treat as equivalent",
+    "evidence_ids": [
+      "TB-G015",
+      "TB-A049"
+    ]
+  },
+  {
+    "id": "QA050",
+    "question": "Tengo insuficiencia renal y tomo etambutol. ¿Necesito cambiar la dosis?",
+    "topic": "renal_dose_adjustment",
+    "drug": "ethambutol",
+    "urgency_flag": "requires CrCl/dialysis status and regimen-specific review",
+    "evidence_ids": [
+      "TB-G017",
+      "TB-G018"
+    ]
+  },
+  {
+    "id": "QA051",
+    "question": "Estoy en hemodiálisis y tomo pirazinamida. ¿Cuándo debo tomarla?",
+    "topic": "hemodialysis_timing",
+    "drug": "pyrazinamide",
+    "urgency_flag": "dose timing must follow current clinician-prescribed regimen",
+    "evidence_ids": [
+      "TB-G017",
+      "TB-A055"
+    ]
+  },
+  {
+    "id": "QA052",
+    "question": "Tengo filtrado renal bajo y me han prescrito levofloxacino para tuberculosis.",
+    "topic": "renal_dose_adjustment",
+    "drug": "levofloxacin",
+    "urgency_flag": "renal dose review needed before treatment",
+    "evidence_ids": [
+      "TB-G019",
+      "TB-A054"
+    ]
+  },
+  {
+    "id": "QA053",
+    "question": "¿Moxifloxacino necesita ajuste si tengo insuficiencia renal?",
+    "topic": "renal_dose_adjustment",
+    "drug": "moxifloxacin",
+    "urgency_flag": "educational; verify regimen and current guidance",
+    "evidence_ids": [
+      "TB-G017"
+    ]
+  },
+  {
+    "id": "QA054",
+    "question": "Tomo cicloserina y tengo insuficiencia renal. ¿Puede aumentar los efectos neurológicos?",
+    "topic": "cycloserine_renal_toxicity",
+    "drug": "cycloserine",
+    "urgency_flag": "dose/exposure review required; neuropsychiatric symptoms warrant prompt assessment",
+    "evidence_ids": [
+      "TB-G018",
+      "TB-A029"
+    ]
+  },
+  {
+    "id": "QA055",
+    "question": "Estoy con amikacina y me ha subido la creatinina.",
+    "topic": "aminoglycoside_nephrotoxicity",
+    "drug": "amikacin",
+    "urgency_flag": "prompt clinical review; assess nephrotoxicity and concomitant nephrotoxins",
+    "evidence_ids": [
+      "TB-G018"
+    ]
+  },
+  {
+    "id": "QA056",
+    "question": "Estoy en diálisis. ¿Todos los medicamentos de la tuberculosis se toman después de la sesión?",
+    "topic": "hemodialysis_timing",
+    "drug": "multiple",
+    "urgency_flag": "do not generalize; drug-specific timing required",
+    "evidence_ids": [
+      "TB-G017",
+      "TB-G020"
+    ]
+  },
+  {
+    "id": "QA057",
+    "question": "¿Por qué me controlan potasio y magnesio si tengo insuficiencia renal y tuberculosis?",
+    "topic": "renal_electrolytes",
+    "drug": "multiple",
+    "urgency_flag": "educational; abnormalities may affect cardiac/QT risk",
+    "evidence_ids": [
+      "TB-G017"
+    ]
+  },
+  {
+    "id": "QA058",
+    "question": "Tengo enfermedad renal crónica y veo peor desde que tomo etambutol.",
+    "topic": "renal_optic_toxicity",
+    "drug": "ethambutol",
+    "urgency_flag": "prompt ophthalmologic/clinical assessment; renal accumulation may increase toxicity risk",
+    "evidence_ids": [
+      "TB-G017",
+      "TB-G013"
+    ]
+  },
+  {
+    "id": "QA059",
+    "question": "Estoy embarazada y me han diagnosticado tuberculosis activa. ¿Puedo tratarme?",
+    "topic": "pregnancy_active_TB",
+    "drug": "multiple",
+    "urgency_flag": "prompt TB/obstetric treatment; untreated active TB is not appropriate",
+    "evidence_ids": [
+      "TB-G021"
+    ]
+  },
+  {
+    "id": "QA060",
+    "question": "Estoy embarazada y tomo isoniazida y rifampicina. ¿Pueden afectar al bebé?",
+    "topic": "pregnancy_first_line",
+    "drug": "isoniazid/rifampicin",
+    "urgency_flag": "specialist counselling; do not stop independently",
+    "evidence_ids": [
+      "TB-G021"
+    ]
+  },
+  {
+    "id": "QA061",
+    "question": "¿Se puede tomar pirazinamida durante el embarazo?",
+    "topic": "pregnancy_pyrazinamide",
+    "drug": "pyrazinamide",
+    "urgency_flag": "individual risk-benefit and jurisdiction-specific guidance",
+    "evidence_ids": [
+      "TB-G021"
+    ]
+  },
+  {
+    "id": "QA062",
+    "question": "Me he quedado embarazada mientras tomo BPaLM. ¿Qué hago?",
+    "topic": "pregnancy_BPaLM",
+    "drug": "bedaquiline/pretomanid/linezolid/moxifloxacin",
+    "urgency_flag": "urgent specialist regimen reassessment; do not stop all drugs independently",
+    "evidence_ids": [
+      "TB-G022"
+    ]
+  },
+  {
+    "id": "QA063",
+    "question": "¿Puedo dar el pecho si tomo isoniazida y rifampicina?",
+    "topic": "breastfeeding_first_line",
+    "drug": "isoniazid/rifampicin",
+    "urgency_flag": "educational; assess infant/maternal context",
+    "evidence_ids": [
+      "TB-G021"
+    ]
+  },
+  {
+    "id": "QA064",
+    "question": "La leche se ha puesto naranja mientras tomo rifampicina.",
+    "topic": "rifampicin_breastmilk",
+    "drug": "rifampicin",
+    "urgency_flag": "usually expected and harmless if isolated",
+    "evidence_ids": [
+      "TB-G021"
+    ]
+  },
+  {
+    "id": "QA065",
+    "question": "¿Puedo dar el pecho si estoy con BPaLM?",
+    "topic": "breastfeeding_BPaLM",
+    "drug": "BPaLM",
+    "urgency_flag": "specialist review; WHO does not recommend BPaLM/BPaL during breastfeeding",
+    "evidence_ids": [
+      "TB-G022"
+    ]
+  },
+  {
+    "id": "QA066",
+    "question": "Me quedé embarazada al principio del tratamiento con rifapentina y moxifloxacino.",
+    "topic": "pregnancy_rifapentine_moxifloxacin_exposure",
+    "drug": "rifapentine/moxifloxacin",
+    "urgency_flag": "obstetric/TB review; exposure data are limited but emerging",
+    "evidence_ids": [
+      "TB-A056"
+    ]
+  },
+  {
+    "id": "QA067",
+    "question": "¿La rifampicina puede hacer que falle el anticonceptivo?",
+    "topic": "contraception_rifampicin",
+    "drug": "rifampicin",
+    "urgency_flag": "contraception counselling; alternative/additional method may be needed",
+    "evidence_ids": [
+      "TB-A050",
+      "TB-G016"
+    ]
+  },
+  {
+    "id": "QA068",
+    "question": "¿El tratamiento de la tuberculosis puede dejarme estéril?",
+    "topic": "fertility",
+    "drug": "multiple",
+    "urgency_flag": "educational; avoid unsupported infertility claims",
+    "evidence_ids": [
+      "TB-G022",
+      "TB-G021"
+    ]
+  }
+]

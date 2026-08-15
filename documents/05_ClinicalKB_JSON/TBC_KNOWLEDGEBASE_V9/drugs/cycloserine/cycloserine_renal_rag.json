@@ -1,0 +1,14 @@
+{
+  "drug": "cycloserine/terizidone",
+  "renal_issue": "Substantial renal elimination; accumulation may increase neuropsychiatric toxicity. Retrieve current WHO drug sheet for exact dose/frequency adjustment.",
+  "toxicity_topics": [
+    "depression",
+    "psychosis",
+    "seizures",
+    "peripheral neuropathy"
+  ],
+  "evidence_ids": [
+    "TB-G018",
+    "TB-A029"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "drug": "ethambutol",
+  "renal_issue": "Renally cleared; accumulation increases optic-toxicity concern. WHO DS-TB guidance specifies thrice-weekly dosing after dialysis for CrCl <30 mL/min.",
+  "toxicity_topics": [
+    "optic neuropathy"
+  ],
+  "evidence_ids": [
+    "TB-G017",
+    "TB-G018"
+  ]
+}

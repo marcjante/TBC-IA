@@ -1,0 +1,114 @@
+{
+  "topic_id": "TB_DRUG_INTERACTIONS",
+  "topic": "Clinically important drug-drug interactions during tuberculosis treatment",
+  "primary_mechanisms": {
+    "rifamycin_induction": {
+      "drugs": [
+        "rifampicin/rifampin",
+        "rifapentine",
+        "rifabutin"
+      ],
+      "mechanisms": [
+        "CYP enzyme induction",
+        "P-glycoprotein induction",
+        "other transporter/enzyme induction"
+      ],
+      "clinical_effect": "Can markedly lower exposure to many concomitant medicines; magnitude varies by rifamycin and interacting drug."
+    },
+    "linezolid_MAO": {
+      "drug": "linezolid",
+      "mechanism": "Reversible nonselective monoamine oxidase inhibition",
+      "clinical_effect": "Potential serotonin toxicity with serotonergic medicines; absolute risk appears low in observational cohorts but requires vigilance."
+    },
+    "additive_QT": {
+      "tb_drugs": [
+        "bedaquiline",
+        "moxifloxacin",
+        "clofazimine",
+        "delamanid"
+      ],
+      "clinical_effect": "Additive QT prolongation; evaluate ECG, electrolytes and other QT-prolonging medicines."
+    }
+  },
+  "high_priority_pairs": [
+    {
+      "pair": "rifampicin + hormonal contraception",
+      "risk": "Reduced hormone exposure / possible reduced contraceptive effectiveness",
+      "evidence": [
+        "TB-G015",
+        "TB-G016",
+        "TB-A050"
+      ]
+    },
+    {
+      "pair": "rifampicin + warfarin/DOACs",
+      "risk": "Major change/reduction in anticoagulant exposure; management depends on specific agent",
+      "evidence": [
+        "TB-G015",
+        "TB-G016",
+        "TB-A049"
+      ]
+    },
+    {
+      "pair": "rifampicin + dolutegravir",
+      "risk": "Reduced dolutegravir exposure; WHO specifies regimen adjustment",
+      "evidence": [
+        "TB-G014"
+      ]
+    },
+    {
+      "pair": "rifampicin + azole antifungals",
+      "risk": "Reduced azole exposure",
+      "evidence": [
+        "TB-G015",
+        "TB-A048"
+      ]
+    },
+    {
+      "pair": "rifampicin + multiple CYP/P-gp substrates",
+      "risk": "Potential loss of efficacy of concomitant therapy",
+      "evidence": [
+        "TB-A051",
+        "TB-A048"
+      ]
+    },
+    {
+      "pair": "linezolid + serotonergic agents",
+      "risk": "Potential serotonin toxicity; rare but clinically important",
+      "evidence": [
+        "TB-A052",
+        "TB-A053"
+      ]
+    },
+    {
+      "pair": "bedaquiline/clofazimine/delamanid/moxifloxacin + other QT drugs",
+      "risk": "Additive QT prolongation",
+      "evidence": [
+        "TB-G011",
+        "TB-G012",
+        "TB-A041"
+      ]
+    }
+  ],
+  "chatbot_rules": [
+    "Never answer 'yes, safe' or 'no, contraindicated' from drug names alone when a guideline-specific adjustment may exist.",
+    "Ask/retrieve the exact concomitant medicine, dose, indication, TB regimen, renal/hepatic context and relevant monitoring.",
+    "Prioritize WHO/CDC guideline instructions over a general interaction database when TB-specific guidance exists.",
+    "For rifamycins, distinguish rifampicin, rifapentine and rifabutin; their interaction magnitude is not interchangeable.",
+    "Do not advise independent changes to anticoagulants, antiretrovirals, anticonvulsants, transplant medicines or hormonal contraception.",
+    "For linezolid plus serotonergic agents, distinguish theoretical interaction from actual symptoms of serotonin toxicity."
+  ],
+  "evidence_ids": [
+    "TB-G014",
+    "TB-G015",
+    "TB-G016",
+    "TB-A048",
+    "TB-A049",
+    "TB-A050",
+    "TB-A051",
+    "TB-A052",
+    "TB-A053",
+    "TB-G011",
+    "TB-G012"
+  ]
+}

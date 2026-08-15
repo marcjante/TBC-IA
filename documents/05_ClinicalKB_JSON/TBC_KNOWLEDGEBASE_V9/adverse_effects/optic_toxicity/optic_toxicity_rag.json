@@ -1,0 +1,38 @@
+{
+  "topic_id": "AE_OPTIC_NEUROPATHY",
+  "topic": "Optic toxicity during tuberculosis treatment",
+  "associated_drugs": [
+    "ethambutol",
+    "linezolid"
+  ],
+  "symptoms": [
+    "blurred vision",
+    "reduced visual acuity",
+    "loss of red-green colour discrimination",
+    "central scotoma",
+    "painless progressive bilateral visual loss"
+  ],
+  "monitoring": {
+    "linezolid": "WHO: visual acuity and colour vision every 2 weeks for the first month after starting a linezolid-containing regimen, then monthly.",
+    "tests": [
+      "Snellen visual acuity",
+      "Ishihara colour vision",
+      "ophthalmologic assessment when abnormalities/symptoms occur"
+    ]
+  },
+  "safety_rules": [
+    "New loss of colour discrimination or visual acuity during ethambutol or linezolid therapy requires prompt clinical/ophthalmologic assessment.",
+    "Do not assume all blurred vision is medication toxicity; consider alternative ophthalmic and neurological causes.",
+    "Do not advise autonomous restart of a suspected offending drug.",
+    "Use current guideline to determine whether ethambutol/linezolid should be interrupted or removed."
+  ],
+  "evidence_ids": [
+    "TB-G013",
+    "TB-A046",
+    "TB-A047",
+    "TB-A006",
+    "TB-A010",
+    "TB-A023",
+    "TB-G010"
+  ]
+}

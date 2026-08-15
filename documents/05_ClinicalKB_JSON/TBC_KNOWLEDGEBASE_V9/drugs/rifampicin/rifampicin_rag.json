@@ -1,0 +1,15 @@
+{
+  "drug": "rifampicin/rifampin",
+  "key_adverse_effects": [
+    "hepatotoxicity",
+    "drug interactions",
+    "thrombocytopenia",
+    "orange discoloration of body fluids"
+  ],
+  "hepatotoxicity_evidence": [
+    "TB-A011",
+    "TB-A012",
+    "TB-A015"
+  ],
+  "rag_note": "Orange discoloration is generally expected; suspected hepatic toxicity requires clinical assessment."
+}

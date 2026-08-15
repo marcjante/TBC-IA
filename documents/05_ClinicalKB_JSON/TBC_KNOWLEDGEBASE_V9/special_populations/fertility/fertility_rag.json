@@ -1,0 +1,14 @@
+{
+  "topic": "Fertility, contraception and pregnancy planning during TB treatment",
+  "rules": [
+    "Do not state that anti-TB medicines cause infertility without drug-specific evidence.",
+    "Rifamycins can reduce effectiveness/exposure of hormonal contraception; retrieve contraception interaction guidance.",
+    "Pregnancy planning during DR-TB treatment needs regimen-specific specialist review, especially for pretomanid-containing regimens.",
+    "Separate fertility concerns from contraceptive failure risk."
+  ],
+  "evidence_ids": [
+    "TB-A050",
+    "TB-G016",
+    "TB-G022"
+  ]
+}

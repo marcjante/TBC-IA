@@ -1,0 +1,13 @@
+{
+  "drug": "amikacin",
+  "renal_issue": "Aminoglycoside; requires renal-function-based dosing/monitoring and carries nephrotoxicity/ototoxicity risk. Injectable agents are no longer preferred when effective all-oral regimens are available.",
+  "toxicity_topics": [
+    "nephrotoxicity",
+    "ototoxicity",
+    "electrolyte disturbance"
+  ],
+  "evidence_ids": [
+    "TB-G018",
+    "TB-G010"
+  ]
+}

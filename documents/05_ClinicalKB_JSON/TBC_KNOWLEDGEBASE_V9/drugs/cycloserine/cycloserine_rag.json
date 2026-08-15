@@ -1,0 +1,17 @@
+{
+  "drug": "cycloserine/terizidone",
+  "key_adverse_effects": [
+    "depression",
+    "psychosis",
+    "anxiety",
+    "hallucinations",
+    "behavioural change",
+    "suicidality",
+    "peripheral neuropathy"
+  ],
+  "monitoring_note": "Neuropsychiatric toxicity needs explicit screening and rapid clinical review.",
+  "evidence_ids": [
+    "TB-A029",
+    "TB-G001"
+  ]
+}

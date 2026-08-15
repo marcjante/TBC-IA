@@ -1,0 +1,14 @@
+{
+  "drug": "levofloxacin",
+  "renal_issue": "Renal impairment reduces clearance; WHO requires dose adjustment in renal impairment in DR-TB guidance.",
+  "toxicity_topics": [
+    "QT prolongation",
+    "tendinopathy",
+    "dysglycemia",
+    "CNS effects"
+  ],
+  "evidence_ids": [
+    "TB-G019",
+    "TB-A054"
+  ]
+}

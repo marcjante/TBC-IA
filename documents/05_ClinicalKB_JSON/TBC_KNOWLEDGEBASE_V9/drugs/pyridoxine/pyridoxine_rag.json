@@ -1,0 +1,11 @@
+{
+  "drug": "pyridoxine (vitamin B6)",
+  "role_in_TB": "Used to reduce risk of isoniazid-associated peripheral neuropathy in selected patients and to treat established INH-related neuropathy according to guideline.",
+  "safety_note": "Excessive pyridoxine can itself cause neuropathy; avoid open-ended dose escalation.",
+  "linezolid_note": "Should not be represented as established prevention for linezolid neuropathy.",
+  "evidence_ids": [
+    "TB-G001",
+    "TB-A030",
+    "TB-A031"
+  ]
+}

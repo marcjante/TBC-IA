@@ -1,0 +1,16 @@
+{
+  "drug": "moxifloxacin",
+  "cardiac_risk": "QT prolongation greater than levofloxacin",
+  "monitoring_note": "WHO advises considering ECG monitoring when moxifloxacin is given with other QT-prolonging medicines.",
+  "interaction_topics": [
+    "bedaquiline",
+    "clofazimine",
+    "delamanid",
+    "other QT-prolonging medicines"
+  ],
+  "evidence_ids": [
+    "TB-G011",
+    "TB-A041",
+    "TB-A042"
+  ]
+}

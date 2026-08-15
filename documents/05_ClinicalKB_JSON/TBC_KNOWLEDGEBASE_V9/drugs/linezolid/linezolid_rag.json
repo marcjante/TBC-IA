@@ -1,0 +1,40 @@
+{
+  "drug": "linezolid",
+  "neurologic_adverse_effects": [
+    "peripheral neuropathy",
+    "optic neuropathy"
+  ],
+  "other_key_toxicities": [
+    "myelosuppression"
+  ],
+  "monitoring_note": "Neurologic toxicity is exposure/duration related; prolonged treatment requires active monitoring.",
+  "pyridoxine_role": "Do not claim pyridoxine prevents linezolid neuropathy; WHO notes prophylaxis may not prevent linezolid-associated neuropathy.",
+  "evidence_ids": [
+    "TB-A022",
+    "TB-A023",
+    "TB-A024",
+    "TB-A025",
+    "TB-A026",
+    "TB-A027",
+    "TB-A028"
+  ],
+  "hematologic_adverse_effects": [
+    "anemia",
+    "thrombocytopenia",
+    "leukopenia/neutropenia",
+    "myelosuppression"
+  ],
+  "cbc_monitoring": {
+    "baseline": "CBC before treatment",
+    "WHO": "Hb at least every 2 weeks for first month, then monthly while on linezolid; more frequent CBC if clinically indicated or baseline counts are low."
+  },
+  "hematology_evidence": [
+    "TB-G010",
+    "TB-A033",
+    "TB-A034",
+    "TB-A035",
+    "TB-A036",
+    "TB-A037",
+    "TB-A038"
+  ]
+}

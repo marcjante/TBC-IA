@@ -1,0 +1,10 @@
+{
+  "topic": "Breastfeeding during TB treatment",
+  "first_line_summary": "CDC: breastfeeding may continue with first-line anti-TB drugs; concentrations in milk are too low to cause toxicity and do not constitute treatment for the infant.",
+  "rifampicin_note": "Orange discoloration of breast milk can occur and is harmless.",
+  "drug_resistant_note": "Do not extrapolate first-line breastfeeding reassurance to BPaLM/BPaL; WHO 2025 excludes breastfeeding from BPaLM/BPaL eligibility due to insufficient safety data.",
+  "evidence_ids": [
+    "TB-G021",
+    "TB-G022"
+  ]
+}

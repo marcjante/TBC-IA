@@ -1,0 +1,91 @@
+{
+  "topic_id": "TB_PREGNANCY_LACTATION",
+  "topic": "Tuberculosis treatment in pregnancy, breastfeeding and reproductive planning",
+  "core_rules": [
+    "Active TB disease in pregnancy should not be left untreated; treatment should be initiated with a pregnancy-appropriate regimen under specialist care.",
+    "Do not classify all anti-TB medicines as simply 'safe' or 'unsafe'; evidence and recommendations differ by drug, indication and regimen.",
+    "When CDC and WHO/programmatic recommendations differ, present the difference explicitly and follow the guideline relevant to the treating jurisdiction/team.",
+    "Pregnancy during BPaLM/BPaL requires specialist reassessment because WHO 2025 does not recommend these regimens for people who are pregnant or breastfeeding owing to insufficient safety data.",
+    "Do not advise stopping an effective TB regimen independently after a positive pregnancy test; urgent TB/obstetric review is required.",
+    "Breastfeeding recommendations differ between first-line and some drug-resistant regimens; retrieve regimen-specific evidence before advising.",
+    "For fertility questions, distinguish direct fertility effects from contraception interactions and from pregnancy avoidance required because of uncertain fetal safety."
+  ],
+  "drug_specific": {
+    "isoniazid": {
+      "pregnancy": "Used in recommended TB regimens during pregnancy; pyridoxine supplementation is commonly recommended in pregnancy/breastfeeding.",
+      "key_monitoring": "Hepatotoxicity risk, including postpartum period.",
+      "sources": [
+        "TB-G021",
+        "TB-G023"
+      ]
+    },
+    "rifampicin": {
+      "pregnancy": "Part of standard pregnancy-compatible TB regimens.",
+      "breastfeeding": "CDC states first-line drugs can be used during breastfeeding; rifampin may discolor breast milk orange without being harmful.",
+      "sources": [
+        "TB-G021"
+      ]
+    },
+    "pyrazinamide": {
+      "pregnancy": "CDC recommends individualized risk-benefit discussion; pyrazinamide is routinely used in pregnancy in many other countries and may be particularly beneficial in severe/extrapulmonary TB or HIV coinfection.",
+      "sources": [
+        "TB-G021"
+      ]
+    },
+    "rifapentine": {
+      "pregnancy": "Pregnancy evidence is evolving. A 2025 analysis of inadvertent early pregnancy exposure in Study 31 did not identify an elevated rate of fetal loss or congenital anomalies, but this does not automatically make every rifapentine regimen recommended during pregnancy.",
+      "sources": [
+        "TB-A056",
+        "TB-G023"
+      ]
+    },
+    "bedaquiline": {
+      "pregnancy": "May appear in alternative individualized/WHO DR-TB regimens, but BPaLM/BPaL specifically is not recommended in pregnant/breastfeeding patients in WHO 2025.",
+      "sources": [
+        "TB-G022"
+      ]
+    },
+    "pretomanid": {
+      "pregnancy": "Key limitation: insufficient pregnancy/lactation safety data. BPaLM/BPaL eligibility excludes pregnancy/breastfeeding in WHO 2025.",
+      "sources": [
+        "TB-G022"
+      ]
+    },
+    "linezolid": {
+      "pregnancy": "May be used in some individualized DR-TB regimens when benefits outweigh risks, but regimen-level guidance must be retrieved; monitor maternal hematologic/neurologic toxicity.",
+      "sources": [
+        "TB-G022",
+        "TB-G010"
+      ]
+    }
+  },
+  "breastfeeding": {
+    "first_line": "CDC states women taking first-line anti-TB drugs may continue breastfeeding; milk concentrations are too low to treat the infant and are not expected to cause toxicity.",
+    "BPaLM_BPaL": "WHO 2025 does not recommend BPaLM/BPaL for breastfeeding patients because safety data are insufficient.",
+    "sources": [
+      "TB-G021",
+      "TB-G022"
+    ]
+  },
+  "reproductive_planning": {
+    "rules": [
+      "Review hormonal contraception interactions with rifampicin/rifapentine.",
+      "If pregnancy occurs during BPaLM/BPaL, WHO advises regimen reassessment; an alternative regimen such as BDLLfxC may be considered in appropriate cases.",
+      "Fertility itself should not be inferred to be impaired unless evidence exists for the specific medicine."
+    ],
+    "sources": [
+      "TB-G022",
+      "TB-A050",
+      "TB-G016"
+    ]
+  },
+  "evidence_ids": [
+    "TB-G021",
+    "TB-G022",
+    "TB-G023",
+    "TB-A056",
+    "TB-A050",
+    "TB-G016",
+    "TB-G010"
+  ]
+}
