@@ -15,12 +15,13 @@ import re
 import os
 import shutil
 
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse, Response
 from pydantic import BaseModel
 import ollama
+import fitz
 
 from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, collection
 from backend.safety import is_tb_related, detect_generic_knowledge_leak
@@ -82,6 +83,7 @@ def chat(request: ChatRequest):
             "source": meta["source"],
             "category": meta["category"],
             "page": meta["page"],
+            "text": frag,
         })
 
     context_text = "\n\n---\n\n".join(context_parts)
@@ -144,6 +146,87 @@ async def upload_document(file: UploadFile = File(...), category: str = Form("si
         "chunks_indexed": chunks_created,
         "total_documentos_indexados": collection.count(),
     }
+
+
+# Categorias que NO corresponden a un PDF real (son citas bibliograficas
+# breves generadas por los indexadores de la Knowledge Base JSON y de la
+# biblioteca ampliada de Excel), asi que nunca tiene sentido intentar servir
+# un archivo para ellas.
+NON_PDF_CATEGORIES = {"05_ClinicalKB_JSON", "07_Biblioteca_Ampliada_253"}
+
+
+@app.get("/api/document/{category}/{filename}")
+def get_document(category: str, filename: str, page: int = 1, highlight: str = ""):
+    """Sirve el PDF original de una fuente citada, para abrirlo en la pagina
+    exacta (fragmento #page=N, interpretado por el visor de PDF nativo del
+    navegador) y, si se recibe `highlight`, con el fragmento de texto
+    recuperado por el RAG resaltado en amarillo dentro de la propia pagina.
+
+    El resaltado busca linea por linea (no el bloque completo de una vez,
+    que suele fallar por saltos de linea internos del PDF) y marca todas las
+    coincidencias encontradas. Si no encuentra ninguna coincidencia (texto
+    reformateado, guiones de particion de palabra, etc.), sirve el PDF igual,
+    sin resaltado, en vez de fallar.
+
+    Proteccion contra path traversal: se prueban rutas candidatas dentro de
+    DOCUMENTS_DIR y se verifica, con el path ya resuelto (realpath), que el
+    resultado sigue estando dentro de DOCUMENTS_DIR antes de servir nada.
+    Category/filename con ".." o rutas absolutas nunca superan esta
+    comprobacion.
+    """
+    if category in NON_PDF_CATEGORIES:
+        raise HTTPException(status_code=404, detail="Esta fuente es una cita bibliografica breve, no tiene un PDF asociado para abrir.")
+
+    documents_real = os.path.realpath(DOCUMENTS_DIR)
+    candidate_paths = [
+        os.path.join(DOCUMENTS_DIR, "TB_full", category, filename),
+        os.path.join(DOCUMENTS_DIR, category, filename),
+    ]
+
+    resolved_path = None
+    for candidate in candidate_paths:
+        candidate_real = os.path.realpath(candidate)
+        is_inside_documents = candidate_real == documents_real or candidate_real.startswith(documents_real + os.sep)
+        if is_inside_documents and os.path.isfile(candidate_real):
+            resolved_path = candidate_real
+            break
+
+    if resolved_path is None:
+        raise HTTPException(status_code=404, detail="No se encontro el PDF de esta fuente en el servidor.")
+
+    if not highlight:
+        response = FileResponse(resolved_path, media_type="application/pdf")
+        response.headers["Content-Disposition"] = "inline"
+        return response
+
+    # Limite defensivo: un fragmento recuperado nunca deberia superar
+    # CHUNK_SIZE (2000 caracteres), pero se recorta por si acaso para evitar
+    # busquedas excesivamente largas sobre el PDF.
+    highlight = highlight[:2500]
+
+    try:
+        pdf = fitz.open(resolved_path)
+        if 1 <= page <= len(pdf):
+            pdf_page = pdf[page - 1]
+            lines = [line.strip() for line in highlight.split("\n") if len(line.strip()) > 3]
+            for line in lines:
+                quads = pdf_page.search_for(line, quads=True)
+                for quad in quads:
+                    pdf_page.add_highlight_annot(quad)
+        pdf_bytes = pdf.tobytes()
+        pdf.close()
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "inline"},
+        )
+    except Exception:
+        # Si algo falla al resaltar (PDF corrupto, texto no encontrado, etc.),
+        # se sirve el PDF original sin resaltado en vez de romper la
+        # experiencia del usuario con un error.
+        response = FileResponse(resolved_path, media_type="application/pdf")
+        response.headers["Content-Disposition"] = "inline"
+        return response
 
 
 @app.post("/api/patient-chat")

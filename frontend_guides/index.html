@@ -83,6 +83,11 @@
     color: var(--text-dim);
   }
   .msg .sources div { margin-bottom: 2px; }
+  .msg .sources a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .msg .sources a:hover { text-decoration: underline; }
   .msg-actions {
     margin-top: 8px;
     display: flex;
@@ -98,7 +103,18 @@
   }
   .msg-actions button:hover { color: var(--text); }
 
-  .loading { color: var(--text-dim); font-style: italic; font-size: 13px; }
+  .loading { color: var(--text-dim); font-style: italic; font-size: 13px; display: flex; align-items: center; gap: 10px; }
+  .loading button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-style: normal;
+  }
+  .loading button:hover { color: var(--text); background: var(--border); }
 
   #upload-area {
     padding: 10px 20px;
@@ -225,7 +241,10 @@
 
 <script>
 const API_URL = "";
+const REQUEST_TIMEOUT_MS = 90000; // 90s: tiempo tras el cual se aborta automaticamente una peticion colgada
+const HEALTH_POLL_MS = 30000; // 30s: frecuencia de comprobacion periodica del estado del backend
 let history = JSON.parse(localStorage.getItem("tbc_chat_history") || "[]");
+let currentAbortController = null;
 
 function renderHistory() {
   const chatEl = document.getElementById("chat");
@@ -234,21 +253,54 @@ function renderHistory() {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Convierte enfasis simple tipo Markdown (**negrita**) generado a veces por
+// el modelo en HTML seguro. El texto se escapa primero (escapeHtml) para
+// evitar cualquier inyeccion, y solo despues se interpreta el patron de
+// negrita sobre el texto ya escapado.
+function renderInlineMarkdown(text) {
+  const escaped = escapeHtml(text);
+  return escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+// Categorias que son citas bibliograficas breves (Knowledge Base JSON y
+// biblioteca ampliada de Excel), sin PDF real detras — deben mostrarse como
+// texto plano, nunca como enlace a un documento inexistente. Debe
+// coincidir con NON_PDF_CATEGORIES en backend/main.py.
+const NON_PDF_CATEGORIES = new Set(["05_ClinicalKB_JSON", "07_Biblioteca_Ampliada_253"]);
+
+function sourceToHtml(s) {
+  const label = `${escapeHtml(s.category)} — ${escapeHtml(s.source)}, p.${escapeHtml(String(s.page))}`;
+  if (NON_PDF_CATEGORIES.has(s.category)) {
+    return `<div>${label}</div>`;
+  }
+  const highlightParam = s.text ? `&highlight=${encodeURIComponent(s.text)}` : "";
+  const url = `/api/document/${encodeURIComponent(s.category)}/${encodeURIComponent(s.source)}?page=${encodeURIComponent(s.page)}${highlightParam}#page=${encodeURIComponent(s.page)}`;
+  return `<div><a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a></div>`;
+}
+
 function appendMessageToDOM(role, content, sources, saveToHistory) {
   const chatEl = document.getElementById("chat");
   const msgEl = document.createElement("div");
   msgEl.className = "msg " + (role === "user" ? "user" : "bot");
 
   const textEl = document.createElement("div");
-  textEl.textContent = content;
+  if (role === "bot") {
+    textEl.innerHTML = renderInlineMarkdown(content);
+  } else {
+    textEl.textContent = content;
+  }
   msgEl.appendChild(textEl);
 
   if (sources && sources.length > 0) {
     const srcEl = document.createElement("div");
     srcEl.className = "sources";
-    srcEl.innerHTML = "<strong>Fuentes:</strong><br>" + sources.map(s =>
-      `<div>${s.category} — ${s.source}, p.${s.page}</div>`
-    ).join("");
+    srcEl.innerHTML = "<strong>Fuentes:</strong><br>" + sources.map(s => sourceToHtml(s)).join("");
     msgEl.appendChild(srcEl);
   }
 
@@ -257,7 +309,20 @@ function appendMessageToDOM(role, content, sources, saveToHistory) {
     actionsEl.className = "msg-actions";
     const copyBtn = document.createElement("button");
     copyBtn.textContent = "Copiar";
-    copyBtn.onclick = () => navigator.clipboard.writeText(content);
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(content).then(() => {
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "Copiado ✓";
+        copyBtn.disabled = true;
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.disabled = false;
+        }, 1500);
+      }).catch(() => {
+        copyBtn.textContent = "Error al copiar";
+        setTimeout(() => { copyBtn.textContent = "Copiar"; }, 1500);
+      });
+    };
     actionsEl.appendChild(copyBtn);
     msgEl.appendChild(actionsEl);
   }
@@ -278,11 +343,14 @@ async function checkHealth() {
     const data = await res.json();
     if (data.status === "ok") {
       statusEl.textContent = `${data.model} · ${data.documentos_indexados} fragmentos indexados`;
+      statusEl.style.color = "";
     } else {
       statusEl.textContent = "Error de conexión con el backend";
+      statusEl.style.color = "#A8502E";
     }
   } catch (e) {
     statusEl.textContent = "Backend no disponible (¿está corriendo uvicorn?)";
+    statusEl.style.color = "#A8502E";
   }
 }
 
@@ -300,24 +368,61 @@ async function sendMessage() {
   const chatEl = document.getElementById("chat");
   const loadingEl = document.createElement("div");
   loadingEl.className = "loading";
-  loadingEl.textContent = "Buscando en los documentos y generando respuesta...";
+
+  const loadingText = document.createElement("span");
+  loadingText.textContent = "Buscando en los documentos y generando respuesta...";
+  loadingEl.appendChild(loadingText);
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancelar";
+  loadingEl.appendChild(cancelBtn);
+
   chatEl.appendChild(loadingEl);
   chatEl.scrollTop = chatEl.scrollHeight;
+
+  currentAbortController = new AbortController();
+  cancelBtn.onclick = () => currentAbortController.abort("cancelado_por_usuario");
+
+  // Aviso intermedio: si tarda mas de 20s, se avisa de que puede haber un
+  // problema con el modelo, sin cancelar todavia (una respuesta normal
+  // puede tardar 20-45s sin que eso sea un fallo).
+  const slowWarningTimer = setTimeout(() => {
+    loadingText.textContent = "Sigue generando la respuesta (puede tardar hasta un minuto). Si tarda mucho mas, puede que el modelo se haya quedado sin responder — puedes cancelar.";
+  }, 20000);
+
+  const hardTimeoutTimer = setTimeout(() => {
+    if (currentAbortController) currentAbortController.abort("timeout");
+  }, REQUEST_TIMEOUT_MS);
 
   try {
     const res = await fetch(API_URL + "/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
+      signal: currentAbortController.signal,
     });
     const data = await res.json();
+    clearTimeout(slowWarningTimer);
+    clearTimeout(hardTimeoutTimer);
     loadingEl.remove();
     appendMessageToDOM("bot", data.response, data.sources, true);
   } catch (e) {
+    clearTimeout(slowWarningTimer);
+    clearTimeout(hardTimeoutTimer);
     loadingEl.remove();
-    appendMessageToDOM("bot", "Error al contactar con el backend: " + e.message, null, true);
+    if (e.name === "AbortError") {
+      const reason = currentAbortController.signal.reason;
+      if (reason === "cancelado_por_usuario") {
+        appendMessageToDOM("bot", "Pregunta cancelada.", null, false);
+      } else {
+        appendMessageToDOM("bot", "La respuesta ha tardado demasiado y se ha cancelado automaticamente (posible problema con el modelo de IA). Comprueba que Ollama sigue activo e intentalo de nuevo.", null, true);
+      }
+    } else {
+      appendMessageToDOM("bot", "Error al contactar con el backend: " + e.message, null, true);
+    }
   }
 
+  currentAbortController = null;
   sendBtn.disabled = false;
 }
 
@@ -330,7 +435,13 @@ function clearChat() {
 }
 
 function exportChat() {
-  const text = history.map(m => `[${m.role === "user" ? "Usuario" : "TBC-AI"}]\n${m.content}\n`).join("\n---\n\n");
+  const text = history.map(m => {
+    let block = `[${m.role === "user" ? "Usuario" : "TBC-AI"}]\n${m.content}\n`;
+    if (m.sources && m.sources.length > 0) {
+      block += "\nFuentes:\n" + m.sources.map(s => `- ${s.category} — ${s.source}, p.${s.page}`).join("\n") + "\n";
+    }
+    return block;
+  }).join("\n---\n\n");
   const blob = new Blob([text], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -404,6 +515,7 @@ document.getElementById("message-input").addEventListener("keydown", (e) => {
 
 renderHistory();
 checkHealth();
+setInterval(checkHealth, HEALTH_POLL_MS);
 </script>
 
 </body>
