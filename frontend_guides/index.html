@@ -88,6 +88,17 @@
     text-decoration: none;
   }
   .msg .sources a:hover { text-decoration: underline; }
+  .copy-citation-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+  }
+  .copy-citation-btn:hover { color: var(--text); background: var(--border); }
   .msg-actions {
     margin-top: 8px;
     display: flex;
@@ -249,7 +260,7 @@ let currentAbortController = null;
 function renderHistory() {
   const chatEl = document.getElementById("chat");
   chatEl.innerHTML = "";
-  history.forEach(msg => appendMessageToDOM(msg.role, msg.content, msg.sources, false));
+  history.forEach(msg => appendMessageToDOM(msg.role, msg.content, msg.sources, false, msg.coverage));
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
@@ -269,23 +280,84 @@ function renderInlineMarkdown(text) {
 }
 
 // Categorias que son citas bibliograficas breves (Knowledge Base JSON y
-// biblioteca ampliada de Excel), sin PDF real detras — deben mostrarse como
-// texto plano, nunca como enlace a un documento inexistente. Debe
-// coincidir con NON_PDF_CATEGORIES en backend/main.py.
+// biblioteca ampliada de Excel), sin PDF real detras — para estas se busca
+// una URL externa (PubMed/DOI) dentro del propio texto de la cita en vez de
+// enlazar a un documento local inexistente. Debe coincidir con
+// NON_PDF_CATEGORIES en backend/main.py.
 const NON_PDF_CATEGORIES = new Set(["05_ClinicalKB_JSON", "07_Biblioteca_Ampliada_253"]);
+
+// Busca una URL directa (PubMed, doi.org...) ya presente en el texto de la
+// cita; si no hay ninguna, intenta construir un enlace a partir del DOI.
+// Devuelve null si no se encuentra ningun identificador aprovechable.
+function extractExternalUrl(text) {
+  if (!text) return null;
+  const urlMatch = text.match(/https?:\/\/\S+/);
+  if (urlMatch) return urlMatch[0].replace(/[).,;]+$/, "");
+  const doiMatch = text.match(/DOI:\s*(\S+)/i);
+  if (doiMatch) return `https://doi.org/${doiMatch[1].replace(/[).,;]+$/, "")}`;
+  return null;
+}
+
+// Construye una cita en formato Vancouver a partir del texto de una ficha
+// de la biblioteca ampliada (scripts/index_excel_bibliography.py). Solo
+// funciona con ese formato concreto (Autores/Organismo, Fuente, DOI en
+// lineas propias); para cualquier otro formato (p. ej. las fichas de la
+// Knowledge Base JSON, que citan varias referencias a la vez) devuelve
+// null, ya que no hay una unica cita limpia que extraer.
+function parseVancouverCitation(text) {
+  if (!text) return null;
+  const titleMatch = text.match(/Referencia bibliografica \([^)]*\):\s*(.+)/);
+  const authorsMatch = text.match(/Autores\/Organismo:\s*(.+?)\s*\((\d{4})\)/);
+  const journalMatch = text.match(/Fuente:\s*(.+?)\s*\|/);
+  const doiMatch = text.match(/DOI:\s*(\S+)/i);
+
+  if (!titleMatch || !authorsMatch) return null;
+
+  const title = titleMatch[1].trim().replace(/\.$/, "");
+  const authors = authorsMatch[1].trim().replace(/\.$/, "");
+  const year = authorsMatch[2];
+  const journal = journalMatch ? journalMatch[1].trim().replace(/\.$/, "") : "";
+  const doi = doiMatch ? doiMatch[1].replace(/[).,;|]+$/, "") : "";
+
+  let citation = `${authors}. ${title}.`;
+  if (journal) citation += ` ${journal}.`;
+  citation += ` ${year}.`;
+  if (doi) citation += ` DOI: ${doi}.`;
+  return citation;
+}
 
 function sourceToHtml(s) {
   const label = `${escapeHtml(s.category)} — ${escapeHtml(s.source)}, p.${escapeHtml(String(s.page))}`;
+
   if (NON_PDF_CATEGORIES.has(s.category)) {
-    return `<div>${label}</div>`;
+    const externalUrl = extractExternalUrl(s.text);
+    const icon = externalUrl ? "🔗" : "📚";
+    const labelWithIcon = `${icon} ${label}`;
+
+    const linkHtml = externalUrl
+      ? `<a href="${escapeHtml(externalUrl)}" target="_blank" rel="noopener noreferrer">${labelWithIcon}</a>`
+      : labelWithIcon;
+
+    const citation = parseVancouverCitation(s.text);
+    const citationBtn = citation
+      ? ` <button class="copy-citation-btn" data-citation="${escapeHtml(citation)}">Copiar cita</button>`
+      : "";
+
+    return `<div>${linkHtml}${citationBtn}</div>`;
   }
+
   const highlightParam = s.text ? `&highlight=${encodeURIComponent(s.text)}` : "";
   const url = `/api/document/${encodeURIComponent(s.category)}/${encodeURIComponent(s.source)}?page=${encodeURIComponent(s.page)}${highlightParam}#page=${encodeURIComponent(s.page)}`;
-  return `<div><a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a></div>`;
+  return `<div><a href="${url}" target="_blank" rel="noopener noreferrer">📄 ${label}</a></div>`;
 }
 
-function appendMessageToDOM(role, content, sources, saveToHistory) {
-  const chatEl = document.getElementById("chat");
+const COVERAGE_LABELS = {
+  alta: { text: "Cobertura documental: alta", color: "#2E7D32" },
+  media: { text: "Cobertura documental: media", color: "#B8860B" },
+  baja: { text: "Cobertura documental: baja", color: "#A8502E" },
+};
+
+function appendMessageToDOM(role, content, sources, saveToHistory, coverage) {  const chatEl = document.getElementById("chat");
   const msgEl = document.createElement("div");
   msgEl.className = "msg " + (role === "user" ? "user" : "bot");
 
@@ -297,10 +369,40 @@ function appendMessageToDOM(role, content, sources, saveToHistory) {
   }
   msgEl.appendChild(textEl);
 
+  if (role === "bot" && coverage && COVERAGE_LABELS[coverage]) {
+    const covEl = document.createElement("div");
+    covEl.style.fontSize = "11px";
+    covEl.style.marginTop = "6px";
+    covEl.style.color = COVERAGE_LABELS[coverage].color;
+    covEl.textContent = COVERAGE_LABELS[coverage].text;
+    msgEl.appendChild(covEl);
+  }
+
   if (sources && sources.length > 0) {
     const srcEl = document.createElement("div");
     srcEl.className = "sources";
     srcEl.innerHTML = "<strong>Fuentes:</strong><br>" + sources.map(s => sourceToHtml(s)).join("");
+    // Delegacion de eventos: los botones "Copiar cita" se crean via innerHTML
+    // (texto generado dinamicamente), asi que no se les puede asignar
+    // onclick directamente al construir el HTML; se captura el clic a nivel
+    // del contenedor y se identifica el boton por su clase.
+    srcEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".copy-citation-btn");
+      if (!btn) return;
+      const citationText = btn.getAttribute("data-citation");
+      navigator.clipboard.writeText(citationText).then(() => {
+        const original = btn.textContent;
+        btn.textContent = "Copiado ✓";
+        btn.disabled = true;
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.disabled = false;
+        }, 1500);
+      }).catch(() => {
+        btn.textContent = "Error al copiar";
+        setTimeout(() => { btn.textContent = "Copiar cita"; }, 1500);
+      });
+    });
     msgEl.appendChild(srcEl);
   }
 
@@ -331,7 +433,7 @@ function appendMessageToDOM(role, content, sources, saveToHistory) {
   chatEl.scrollTop = chatEl.scrollHeight;
 
   if (saveToHistory) {
-    history.push({ role, content, sources: sources || [] });
+    history.push({ role, content, sources: sources || [], coverage: coverage || null });
     localStorage.setItem("tbc_chat_history", JSON.stringify(history));
   }
 }
@@ -405,7 +507,7 @@ async function sendMessage() {
     clearTimeout(slowWarningTimer);
     clearTimeout(hardTimeoutTimer);
     loadingEl.remove();
-    appendMessageToDOM("bot", data.response, data.sources, true);
+    appendMessageToDOM("bot", data.response, data.sources, true, data.coverage);
   } catch (e) {
     clearTimeout(slowWarningTimer);
     clearTimeout(hardTimeoutTimer);

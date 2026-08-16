@@ -173,6 +173,32 @@ LEAK_PATTERNS = [
     "no se menciona explicitamente",
 ]
 
+# Frases del propio reflejo de seguridad generico del modelo (rechazo tipo
+# "no puedo dar asistencia medica"), distinto de la frase fija oficial del
+# sistema ("No encuentro esta informacion..."). Detectado en produccion en
+# la sesion de agosto 2026: el modelo respondio con un rechazo generico de
+# este tipo pese a tener 8 fragmentos de contexto relevantes disponibles,
+# y el guardrail de LEAK_PATTERNS no lo capturaba por no ser un caso de
+# "relleno con conocimiento general" sino de rechazo directo. Las frases
+# se han elegido para ser lo bastante especificas del patron de rechazo
+# como para no confundirse con un recordatorio legitimo dentro de una
+# respuesta bien fundamentada (p. ej. "consulta a tu equipo medico" al
+# final de una respuesta con fuentes citadas no activa este guard).
+REFUSAL_PATTERNS = [
+    "no puedo proporcionar asistencia medica",
+    "no puedo proporcionar diagnosticos",
+    "no puedo dar diagnosticos",
+    "no puedo brindar diagnosticos",
+    "no puedo ofrecer diagnosticos",
+    "no puedo dar asistencia medica",
+    "no puedo brindar asistencia medica",
+    "no puedo ofrecer asistencia medica",
+    "lo siento, pero no puedo",
+    "como modelo de lenguaje, no puedo",
+    "no estoy programado para dar consejos medicos",
+    "no estoy capacitado para dar consejos medicos",
+]
+
 
 def normalize_accents(text):
     t = text.lower()
@@ -184,6 +210,18 @@ def normalize_accents(text):
 def detect_generic_knowledge_leak(response_text):
     normalized = normalize_accents(response_text)
     return any(normalize_accents(pat) in normalized for pat in LEAK_PATTERNS)
+
+
+def detect_model_refusal(response_text):
+    """Detecta cuando el propio modelo rechaza responder con su reflejo
+    generico de seguridad ('no puedo dar asistencia medica'), en vez de
+    seguir las reglas del sistema (responder con el contexto, o usar la
+    frase fija oficial si no hay informacion suficiente). Un rechazo de
+    este tipo debe tratarse igual que una fuga: sustituirse por la frase
+    fija y vaciar las fuentes, para no mostrar una respuesta contradictoria
+    (dice que no puede ayudar, pero adjunta fuentes)."""
+    normalized = normalize_accents(response_text)
+    return any(normalize_accents(pat) in normalized for pat in REFUSAL_PATTERNS)
 
 
 def is_tb_related(text):

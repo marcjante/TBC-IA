@@ -24,7 +24,7 @@ import ollama
 import fitz
 
 from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, collection
-from backend.safety import is_tb_related, detect_generic_knowledge_leak
+from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal
 from backend.prompts import SYSTEM_PROMPT, PATIENT_SYSTEM_PROMPT
 from backend.languages import resolve_lang_name, resolve_canned_no_info
 from backend.rag import retrieve, is_relevant, index_single_pdf
@@ -40,16 +40,23 @@ app.add_middleware(
 )
 
 
+class HistoryTurn(BaseModel):
+    role: str  # "user" o "bot"
+    content: str
+
+
 class ChatRequest(BaseModel):
     message: str
     top_k: int = 8
     debug: bool = False
+    history: list[HistoryTurn] = []
 
 
 class PatientChatRequest(BaseModel):
     message: str
     lang: str = "es"
     debug: bool = False
+    history: list[HistoryTurn] = []
 
 
 @app.get("/api/health")
@@ -62,9 +69,45 @@ def health():
         return {"status": "error", "detail": str(e)}
 
 
+MAX_HISTORY_TURNS = 2  # ultimo intercambio (1 pregunta + 1 respuesta), no todo el historial
+MAX_HISTORY_CHARS = 400  # recorte defensivo por mensaje, para no desbordar la ventana de contexto del modelo
+
+
+def build_retrieval_query(message, history):
+    """Si el mensaje actual es muy corto (probable pregunta de seguimiento,
+    ej. '¿y en niños?'), se combina con la ultima pregunta del usuario para
+    mejorar la busqueda vectorial, que de otro modo tendria muy poca
+    informacion sobre la que buscar. Si el mensaje ya es largo/autonomo, se
+    usa tal cual, para que cambiar de tema de golpe no arrastre resultados
+    del tema anterior."""
+    if len(message.strip()) >= 40 or not history:
+        return message
+    previous_user_msgs = [h.content for h in history if h.role == "user"]
+    if not previous_user_msgs:
+        return message
+    return previous_user_msgs[-1] + " " + message
+
+
+def build_history_block(history):
+    """Construye un bloque de texto con el ultimo intercambio (pregunta +
+    respuesta), recortado, para dar continuidad a la conversacion sin
+    arriesgar desbordar la ventana de contexto del modelo (4096 tokens,
+    ya ajustada por los propios fragmentos del RAG)."""
+    if not history:
+        return ""
+    recent = history[-MAX_HISTORY_TURNS:]
+    lines = []
+    for turn in recent:
+        role_label = "Usuario" if turn.role == "user" else "Asistente"
+        content = turn.content[:MAX_HISTORY_CHARS]
+        lines.append(f"{role_label}: {content}")
+    return "HISTORIAL RECIENTE (para dar continuidad a la conversacion, no es una fuente de informacion clinica):\n" + "\n".join(lines) + "\n\n"
+
+
 @app.post("/api/chat")
 def chat(request: ChatRequest):
-    fragments, metadatas, distances = retrieve(request.message, request.top_k)
+    retrieval_query = build_retrieval_query(request.message, request.history)
+    fragments, metadatas, distances = retrieve(retrieval_query, request.top_k)
     has_keyword = is_tb_related(request.message)
 
     if not is_relevant(fragments, distances, has_keyword):
@@ -87,14 +130,15 @@ def chat(request: ChatRequest):
         })
 
     context_text = "\n\n---\n\n".join(context_parts)
-    user_prompt = "CONTEXTO:\n" + context_text + "\n\nPREGUNTA DEL USUARIO:\n" + request.message
+    history_block = build_history_block(request.history)
+    user_prompt = history_block + "CONTEXTO:\n" + context_text + "\n\nPREGUNTA DEL USUARIO:\n" + request.message
 
     final_response = generate_response(SYSTEM_PROMPT, user_prompt)
 
     no_info_phrase = "No encuentro esta informaci"
     CANNED_NO_INFO = "No encuentro esta informacion en los documentos disponibles."
 
-    leaked = detect_generic_knowledge_leak(final_response)
+    leaked = detect_generic_knowledge_leak(final_response) or detect_model_refusal(final_response)
 
     # Se busca la frase fija en cualquier parte de la respuesta, no solo al
     # principio: el modelo a veces la antepone con texto propio (ej. "La
@@ -111,6 +155,25 @@ def chat(request: ChatRequest):
         "response": final_response,
         "sources": sources_used,
     }
+    # Indicador de cobertura documental, siempre incluido (no solo en modo
+    # debug): clasifica que tan cerca estuvo el mejor fragmento recuperado
+    # de la pregunta, usando la misma distancia que ya se calcula para el
+    # filtro de relevancia. Umbrales elegidos de forma conservadora sobre
+    # el rango observado en la sesion de auditoria de agosto 2026 (la
+    # mayoria de respuestas bien fundamentadas caian por debajo de 480).
+    # No sustituye una verificacion clinica humana, es solo una senal
+    # orientativa para el profesional.
+    if distances and sources_used:
+        best_distance = distances[0]
+        if best_distance <= 400:
+            result["coverage"] = "alta"
+        elif best_distance <= 600:
+            result["coverage"] = "media"
+        else:
+            result["coverage"] = "baja"
+    else:
+        result["coverage"] = None
+
     if request.debug:
         result["debug_info"] = {
             "model": CHAT_MODEL,
@@ -234,7 +297,8 @@ def patient_chat(request: PatientChatRequest):
     lang_name = resolve_lang_name(request.lang)
     canned_no_info = resolve_canned_no_info(request.lang)
 
-    fragments, metadatas, distances = retrieve(request.message, 8)
+    retrieval_query = build_retrieval_query(request.message, request.history)
+    fragments, metadatas, distances = retrieve(retrieval_query, 8)
 
     # La lista TB_KEYWORDS solo cubre espanol: en arabe/urdu nunca habria
     # coincidencia, lo que forzaria siempre el umbral estricto (480) aunque
@@ -248,8 +312,9 @@ def patient_chat(request: PatientChatRequest):
 
     context_parts = [frag for frag in fragments]
     context_text = "\n\n---\n\n".join(context_parts)
+    history_block = build_history_block(request.history)
 
-    user_prompt = f"IDIOMA DE RESPUESTA: {lang_name}\n\nCONTEXTO:\n{context_text}\n\nPREGUNTA DEL PACIENTE:\n{request.message}"
+    user_prompt = f"{history_block}IDIOMA DE RESPUESTA: {lang_name}\n\nCONTEXTO:\n{context_text}\n\nPREGUNTA DEL PACIENTE:\n{request.message}"
 
     final_response = generate_response(PATIENT_SYSTEM_PROMPT, user_prompt)
 
@@ -271,7 +336,7 @@ def patient_chat(request: PatientChatRequest):
     ]
     said_no_info = any(v in normalized_check for v in no_info_variants)
 
-    leaked = detect_generic_knowledge_leak(final_response)
+    leaked = detect_generic_knowledge_leak(final_response) or detect_model_refusal(final_response)
 
     if said_no_info or leaked:
         final_response = CANNED_NO_INFO_PATIENT
