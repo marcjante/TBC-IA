@@ -1,0 +1,53 @@
+{
+  "topic": "Contagio de tuberculosis en la vida cotidiana (preguntas frecuentes)",
+  "topic_id": "contagio_vida_cotidiana",
+  "nota_metodologica": "Ficha construida en agosto 2026 a partir de un analisis de patrones de uso real del banco de 560 preguntas de evaluacion de TBC-AI, que identifico este como uno de los dos mayores huecos de cobertura documental. Cada afirmacion esta respaldada por fuentes verificadas mediante busqueda externa real (no generadas por el modelo de lenguaje). No se incluyen afirmaciones para las que no se encontro una fuente fiable.",
+
+  "contacto_casual_no_transmite": {
+    "pregunta_relacionada": "Puedo besar a mi pareja? Se transmite por la saliva? Se contagia por compartir cubiertos? Se transmite por la ropa? Se contagia por abrazar? Se contagia por dar la mano? Se contagia por compartir el bano?",
+    "respuesta": "El contacto casual (dar la mano, abrazar, besar, compartir comida, bebida o cubiertos, tocar la ropa o la ropa de cama de una persona con TB) NO transmite la tuberculosis. La TB se transmite unicamente por via aerea: cuando una persona con tuberculosis pulmonar o laringea activa tose, estornuda, habla o canta, libera pequenas particulas (aerosoles) que contienen la bacteria. Otra persona debe respirar estas particulas, generalmente tras una exposicion cercana y prolongada en un espacio compartido con mala ventilacion, para poder infectarse. La bacteria no sobrevive de forma relevante en superficies ni se transmite por fomites (objetos tocados) en la practica.",
+    "referencias": [
+      "Centers for Disease Control and Prevention (CDC). 2025. Citado en: Care of Patient with Tuberculosis, CEUfast (revision de enfermeria). https://ceufast.com/course/care-of-patient-with-tuberculosis",
+      "Southern Nevada Health District. How is TB spread? https://www.southernnevadahealthdistrict.org/faq-items/how-is-tb-spread/",
+      "Allegheny County Health Department. Tuberculosis Frequently Asked Questions. https://filecabinet9.eschoolview.com/ED17BF81-9CBA-43CE-A758-035A72751686/64fc7ec5-1498-4611-9ad7-e352e94c0708.pdf",
+      "World Health Organization, citado en: India Fights TB. You cannot catch TB from sharing food: Busting common myths. https://indiafightstb.com/you-cannot-catch-tb-from-sharing-food-busting-common-myths/"
+    ]
+  },
+
+  "lactancia_materna": {
+    "pregunta_relacionada": "Puedo dar el pecho si tengo tuberculosis?",
+    "respuesta": "No se han reportado casos de transmision de tuberculosis a traves de la lactancia materna en si misma. Una madre con tuberculosis en tratamiento efectivo puede, en general, seguir amamantando, aunque la decision especifica debe confirmarla siempre su equipo medico segun su situacion clinica individual (por ejemplo, si tiene TB activa sin tratar, las precauciones de contacto cercano/respiratorio con el bebe siguen aplicando igual que con cualquier otro conviviente).",
+    "referencias": [
+      "Loveday M et al. 2020. Citado en: Care of Patient with Tuberculosis, CEUfast. (Nota: este estudio ya esta indexado en TBC-AI como referencia TB163 de la biblioteca ampliada de 253 referencias: Maternal and Infant Outcomes Among Pregnant Women Treated for MDR/RR-TB, South Africa)."
+    ]
+  },
+
+  "aislamiento_domiciliario": {
+    "pregunta_relacionada": "Tengo que aislarme? Puedo ir a visitar a mis padres?",
+    "respuesta": "Las guias mas recientes (National TB Coalition of America, NTCA 2024) recomiendan, en la mayoria de los casos en el entorno comunitario, un periodo de aislamiento respiratorio de aproximadamente 5 dias tras iniciar un tratamiento efectivo, aunque la duracion exacta depende de factores individuales (resultado de baciloscopia, tipo de TB, resistencia a farmacos, criterio clinico). NO se debe generalizar esta cifra sin confirmarla con el equipo medico del paciente: solo su propio equipo puede indicar cuando es seguro dejar el aislamiento y retomar visitas o actividades sociales.",
+    "referencias": [
+      "Shah M et al. 2024. National Tuberculosis Coalition of America Guidelines for Respiratory Isolation and Restrictions to Reduce Transmission of Pulmonary Tuberculosis in Community Settings. DOI: 10.1093/cid/ciae199. (Ya indexado en TBC-AI como referencia TB045 de la biblioteca ampliada de 253 referencias)."
+    ]
+  },
+
+  "mascotas": {
+    "pregunta_relacionada": "Puede contagiarse mi mascota?",
+    "respuesta": "Es un riesgo real pero RARO, documentado en casos publicados: existen informes confirmados de transmision de Mycobacterium tuberculosis de humanos a perros y gatos convivientes (llamada 'zoonosis inversa'), y al menos un caso confirmado de transmision en sentido contrario, de un perro a su propietario. El riesgo aumenta con el contacto cercano y prolongado en el hogar. No es motivo de alarma para el contacto cotidiano normal, pero conviene informar a su equipo medico si convive con mascotas, especialmente en casos de tuberculosis activa sin tratar, ya que algunos protocolos de estudio de contactos ya recomiendan considerar a las mascotas del hogar.",
+    "referencias": [
+      "Zmak L et al. 2025. First Confirmed Case of Zoonotic Transmission of RR-TB from a Dog to a Human, a Neglected Mode of Mycobacterium tuberculosis Infection. Pathogens. DOI: 10.3390/pathogens14070684.",
+      "Ramdas KE et al. 2015. Mycobacterium bovis infection in humans and cats in same household, Texas, USA, 2012. Emerg Infect Dis. 21:480-483.",
+      "Centers for Disease Control and Prevention. 2004. Mycobacterium tuberculosis Transmission from Human to Canine. Emerging Infectious Diseases. 10(12).",
+      "Frontiers in Veterinary Science. 2026. Case Report: Epidemiologically inferred reverse zoonosis and intra-household zoonotic re-exposure of Mycobacterium tuberculosis in a domestic dog. https://www.frontiersin.org/journals/veterinary-science/articles/10.3389/fvets.2026.1824722/full"
+    ]
+  },
+
+  "aire_acondicionado": {
+    "pregunta_relacionada": "El aire acondicionado contagia?",
+    "respuesta": "El aire acondicionado por si mismo no transmite la bacteria, pero SI puede aumentar el riesgo de contagio de forma indirecta y significativa: un estudio de 2025 en hogares y centros sanitarios de India midio que, con el aire acondicionado encendido (que tipicamente implica mantener puertas y ventanas cerradas), el recambio de aire fresco caia drasticamente y el riesgo estimado de transmision de TB subia al 76%, por encima incluso de tener las puertas y ventanas cerradas sin aire acondicionado (62%). El mecanismo es que el aire acondicionado eficiente requiere sellar el espacio, eliminando la ventilacion natural de la que depende la dilucion del aire contaminado. La recomendacion practica coherente con esta evidencia es priorizar la ventilacion natural (ventanas abiertas) sobre el uso de aire acondicionado en espacios compartidos con una persona con TB activa sin tratar o en fase inicial de tratamiento.",
+    "referencias": [
+      "Estudio en Puducherry, India. 2025. Impact of indoor ventilation on TB transmission risk: implications of climate change. International Journal of Tuberculosis and Lung Disease (IJTLD). PMID: 41666017.",
+      "Nardell EA. 2020. Cool but dangerous: How climate change is increasing the risk of airborne infections. Indoor Air. DOI: 10.1111/ina.12608.",
+      "World Health Organization. TB Knowledge Sharing Platform. Environmental controls. https://tbksp.who.int/en/node/2589"
+    ]
+  }
+}

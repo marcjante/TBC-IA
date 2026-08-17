@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-08-16_2240",
+  "model": "llama3.1:8b",
+  "documentos_indexados": 5272,
+  "banks": {
+    "faq_200": {
+      "total": 200,
+      "con_respuesta": 97,
+      "sin_cobertura": 81,
+      "errores": 22
+    },
+    "banco_360": {
+      "total": 360,
+      "con_respuesta": 225,
+      "sin_cobertura": 135,
+      "errores": 0
+    }
+  },
+  "nota": "Clasificacion automatica (texto de respuesta vs. mensaje fijo de ausencia de informacion). No implica verificacion clinica humana."
+}

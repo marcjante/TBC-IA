@@ -1,0 +1,76 @@
+{
+  "topic": "Logistica practica de la medicacion antituberculosa (preguntas frecuentes)",
+  "topic_id": "logistica_medicacion",
+  "nota_metodologica": "Ficha construida en agosto 2026 a partir de un analisis de patrones de uso real del banco de 560 preguntas de evaluacion de TBC-AI (30 preguntas repetidas sin cobertura documental, entre el chat de guias y el chat de pacientes). Cada afirmacion esta respaldada por fuentes verificadas mediante busqueda externa real. Cuando no se encontro una fuente TB-especifica fiable para una pregunta concreta, se indica explicitamente en vez de extrapolar de otros farmacos.",
+
+  "dosis_olvidada": {
+    "pregunta_relacionada": "Que hago si olvido una dosis? Se me olvido tomar la medicacion esta manana, que hago? Que pasa si me salto un dia? Si me acuerdo por la noche, me la tomo igual?",
+    "respuesta": "Si olvida una dosis un dia, la indicacion oficial del CDC es: OMITA esa dosis y tome la siguiente dosis programada con normalidad (no duplicar la dosis siguiente para compensar). Informe a su equipo medico de que ha olvidado una dosis. No dejar de tomar la medicacion ni interrumpir el tratamiento por su cuenta: saltarse dosis con frecuencia aumenta el riesgo de que el tratamiento falle y de que se desarrolle resistencia a los farmacos.",
+    "referencias": [
+      "Centers for Disease Control and Prevention (CDC). Treating Tuberculosis. 'If you forget to take your pills one day, skip that dose and take the next scheduled dose. Tell your health care provider that you missed a dose.' https://www.cdc.gov/tb/treatment/index.html",
+      "Centers for Disease Control and Prevention (CDC). Treating Active Tuberculosis Disease. https://www.cdc.gov/tb/treatment/active-tuberculosis-disease.html"
+    ]
+  },
+
+  "vomito_tras_la_dosis": {
+    "pregunta_relacionada": "Que hago si vomito la medicacion? He vomitado justo despues de tomar la pastilla, me la vuelvo a tomar?",
+    "respuesta": "GAP DE COBERTURA DOCUMENTADO: no se ha encontrado una guia especifica de tuberculosis (OMS/CDC) que indique un protocolo claro de tiempo (por ejemplo, 'si vomita antes de X minutos, repita la dosis') para este farmaco concreto. No se debe responder a esta pregunta con una regla generica extrapolada de otros medicamentos sin confirmarla. La recomendacion segura es que el paciente contacte directamente con su equipo de TBC para que le indiquen que hacer en su caso concreto, especialmente porque los vomitos tambien pueden ser un signo de toxicidad hepatica (ver mas abajo) y requieren valoracion clinica.",
+    "referencias": [
+      "Ninguna fuente TB-especifica encontrada con busqueda externa (agosto 2026). Pendiente de verificacion directa con protocolo clinico del centro."
+    ]
+  },
+
+  "con_o_sin_alimentos": {
+    "pregunta_relacionada": "Es mejor con el estomago vacio? Puedo tomarlas con el desayuno? A que hora es mejor tomarlas?",
+    "respuesta": "La recomendacion estandar es tomar la rifampicina (y las combinaciones que la incluyen) con el estomago vacio, al menos 1 hora antes o 2 horas despues de una comida, porque los alimentos reducen su absorcion. Sin embargo, si el medicamento provoca malestar estomacal, la Clinica Mayo indica explicitamente que se puede tomar con alimentos para reducir las molestias digestivas, sin que esto suponga un problema grave (aunque la absorcion sea ligeramente menor). Importante: no tomar antiacidos que contengan aluminio (ej. Maalox, Mylanta) en la hora siguiente a la dosis, porque pueden interferir con la absorcion del medicamento.",
+    "referencias": [
+      "Cleveland Clinic. Isoniazid; Rifampin capsules. 'Take it on any empty stomach, at least 1 hour before and 2 hours after food.' https://my.clevelandclinic.org/health/drugs/18475-isoniazid-rifampin-capsules",
+      "Mayo Clinic. Rifampin and isoniazid (oral route). 'If this medicine upsets your stomach, take it with food... do not take aluminum-containing antacids within 1 hour.' https://www.mayoclinic.org/drugs-supplements/rifampin-and-isoniazid-oral-route/description/drg-20062747",
+      "Allina Health. Rifampin/isoniazid (By mouth). https://account.allinahealth.org/library/content/45/289"
+    ]
+  },
+
+  "horario_regular": {
+    "pregunta_relacionada": "Tengo que tomarlas siempre a la misma hora? Puedo cambiar el horario?",
+    "respuesta": "Se recomienda tomar la medicacion a la misma hora todos los dias, para mantener niveles estables del farmaco en el cuerpo y facilitar la formacion del habito. Cambiar el horario puntualmente no es grave siempre que se mantenga la separacion adecuada respecto a las comidas (ver punto anterior) y no suponga saltarse ni duplicar dosis; para cambios de horario mantenidos en el tiempo, es preferible confirmarlo con el equipo medico.",
+    "referencias": [
+      "Allina Health. Rifampin/isoniazid (By mouth). 'It is important to take this medicine on a regular schedule.' https://account.allinahealth.org/library/content/45/289",
+      "Mayo Clinic. Rifampin and isoniazid (oral route). https://www.mayoclinic.org/drugs-supplements/rifampin-and-isoniazid-oral-route/description/drg-20062747"
+    ]
+  },
+
+  "conservacion_y_calor": {
+    "pregunta_relacionada": "Se pueden guardar en la nevera? Aguantan bien con el calor del verano? Puedo llevarlas en el bolso todo el dia? Caducan pronto?",
+    "respuesta": "La medicacion debe conservarse a temperatura ambiente, en su envase cerrado, lejos del calor directo, la luz y la humedad. NO se recomienda guardarla en la nevera. Llevarla en un bolso durante el dia no suele ser un problema en condiciones normales, pero conviene evitar exponerla a calor extremo prolongado (por ejemplo, dentro de un coche al sol) o a humedad. Para la fecha de caducidad concreta, debe consultarse el envase de cada medicamento, ya que varia segun el fabricante y no se puede generalizar una cifra unica.",
+    "referencias": [
+      "Allina Health. Rifampin/isoniazid (By mouth). 'Store at room temperature in a closed container, away from heat, light, and moisture.' https://account.allinahealth.org/library/content/45/289"
+    ]
+  },
+
+  "analgesicos_comunes": {
+    "pregunta_relacionada": "Puedo tomar paracetamol? Puedo tomar ibuprofeno si me duele algo?",
+    "respuesta": "Existe interaccion documentada entre el paracetamol/ibuprofeno y la combinacion isoniazida-rifampicina, principalmente por el riesgo compartido de afectacion hepatica: ambos farmacos antituberculosos ya pueden afectar al higado, y el paracetamol en dosis altas tambien es hepatotoxico. Esto no significa que esten prohibidos, pero SI requiere precaucion: informar siempre a su equipo medico antes de tomar analgesicos de forma repetida durante el tratamiento, evitar dosis altas de paracetamol sin supervision, y estar atento a los signos de alarma hepatica (perdida de apetito, nauseas, orina oscura, ojos o piel amarillentos) descritos en la ficha de efectos adversos.",
+    "referencias": [
+      "Drugs.com. Drug Interactions between ibuprofen and isoniazid/rifampin. https://www.drugs.com/drug-interactions/ibuprofen-with-isoniazid-rifampin-1310-0-1395-0.html",
+      "Drugs.com. Can You Take Isoniazid/rifampin with Paracetamol? https://www.drugs.com/drug-interactions/isoniazid-rifampin-with-paracetamol-1395-0-11-2744.html",
+      "Centers for Disease Control and Prevention (CDC). Adverse Events During TB Treatment. https://www.cdc.gov/tb/hcp/treatment/adverse-events.html"
+    ]
+  },
+
+  "por_que_varios_farmacos_a_la_vez": {
+    "pregunta_relacionada": "Por que tomo varias medicinas distintas a la vez? Todas hacen lo mismo o cada una algo diferente? Puedo dejar de tomar una si me sienta mal, pero seguir con las otras? Cual es la mas importante de todas?",
+    "respuesta": "El tratamiento de la tuberculosis combina varios farmacos distintos a la vez de forma deliberada, no por redundancia: cada bacteria de la tuberculosis tiene una probabilidad pequena de desarrollar resistencia a un solo farmaco de forma espontanea; al combinar varios farmacos con mecanismos distintos a la vez, se reduce drasticamente la probabilidad de que sobreviva una bacteria resistente a todos ellos simultaneamente. Por este mismo motivo, NO se debe dejar de tomar uno de los farmacos por su cuenta aunque los otros se sigan tomando: hacerlo equivale, en la practica, a un tratamiento incompleto y aumenta el riesgo de fracaso terapeutico y de resistencia a los farmacos. Si un farmaco concreto sienta mal, la decision de ajustarlo corresponde siempre al equipo medico, nunca a una decision unilateral del paciente. No existe 'el farmaco mas importante': la eficacia del tratamiento depende de la combinacion completa prescrita.",
+    "referencias": [
+      "Este principio (terapia combinada para prevenir resistencia) esta ampliamente respaldado por las guias OMS ya indexadas en TBC-AI (WHO consolidated guidelines on tuberculosis, modulos de tratamiento), disponibles en documents/TB_full/01_WHO/. No ha sido necesaria busqueda externa adicional para este punto por ser principio basico ya cubierto por la base documental existente."
+    ]
+  },
+
+  "vitamina_b6_piridoxina": {
+    "pregunta_relacionada": "Necesito vitamina B6?",
+    "respuesta": "Cuando el tratamiento incluye isoniazida, es habitual que el equipo medico prescriba tambien piridoxina (vitamina B6) de forma conjunta, para prevenir o reducir el riesgo de neuropatia periferica (hormigueo, entumecimiento) asociada a la isoniazida. Es importante no saltarse las dosis de piridoxina si ha sido prescrita, por el mismo motivo que no se deben saltar las del resto de la medicacion.",
+    "referencias": [
+      "Mayo Clinic. Rifampin and isoniazid (oral route). 'Your doctor may also want you to take pyridoxine... it is very important to take pyridoxine everyday along with this medicine.' https://www.mayoclinic.org/drugs-supplements/rifampin-and-isoniazid-oral-route/description/drg-20062747",
+      "Esta informacion ya esta parcialmente indexada en TBC-AI (documents/05_ClinicalKB_JSON/.../drugs/pyridoxine/pyridoxine_rag.json); esta ficha la complementa con lenguaje mas coloquial para mejorar la recuperacion en preguntas formuladas de forma cotidiana."
+    ]
+  }
+}
