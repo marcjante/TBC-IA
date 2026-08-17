@@ -13,7 +13,9 @@ la arquitectura objetivo de la auditoria.
 
 import re
 import os
+import json
 import shutil
+from datetime import datetime
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,8 +25,8 @@ from pydantic import BaseModel
 import ollama
 import fitz
 
-from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, collection
-from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal
+from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, PROJECT_ROOT, collection
+from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal, detect_no_info_statement
 from backend.prompts import SYSTEM_PROMPT, PATIENT_SYSTEM_PROMPT
 from backend.languages import resolve_lang_name, resolve_canned_no_info
 from backend.rag import retrieve, is_relevant, index_single_pdf
@@ -104,6 +106,39 @@ def build_history_block(history):
     return "HISTORIAL RECIENTE (para dar continuidad a la conversacion, no es una fuente de informacion clinica):\n" + "\n".join(lines) + "\n\n"
 
 
+USAGE_LOG_PATH = os.path.join(PROJECT_ROOT, "usage_patterns.jsonl")
+
+
+def log_usage_pattern(endpoint, coverage, question=None, lang=None):
+    """Registro ligero de patrones de uso real, para poder revisar despues
+    (con scripts/analyze_usage_patterns.py) que preguntas se repiten sin
+    buena cobertura documental y decidir que ampliar en la base de
+    conocimiento. NUNCA debe romper la respuesta al usuario si falla: se
+    envuelve en try/except y se ignora cualquier error silenciosamente.
+
+    Decision de privacidad (agosto 2026): en /api/chat (guias, uso
+    profesional) se guarda el texto completo de la pregunta, porque el
+    riesgo de que contenga datos personales de pacientes es bajo y el
+    texto es lo que hace util el registro para detectar huecos concretos.
+    En /api/patient-chat NO se guarda el texto de la pregunta (los
+    pacientes a veces escriben detalles personales sin querer), solo la
+    clasificacion de cobertura y el idioma."""
+    try:
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "endpoint": endpoint,
+            "coverage": coverage,
+        }
+        if question is not None:
+            entry["question"] = question
+        if lang is not None:
+            entry["lang"] = lang
+        with open(USAGE_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
 @app.post("/api/chat")
 def chat(request: ChatRequest):
     retrieval_query = build_retrieval_query(request.message, request.history)
@@ -111,6 +146,7 @@ def chat(request: ChatRequest):
     has_keyword = is_tb_related(request.message)
 
     if not is_relevant(fragments, distances, has_keyword):
+        log_usage_pattern("/api/chat", "sin_cobertura", question=request.message)
         return {
             "response": "No encuentro esta informacion en los documentos disponibles.",
             "sources": [],
@@ -135,16 +171,19 @@ def chat(request: ChatRequest):
 
     final_response = generate_response(SYSTEM_PROMPT, user_prompt)
 
-    no_info_phrase = "No encuentro esta informaci"
     CANNED_NO_INFO = "No encuentro esta informacion en los documentos disponibles."
 
     leaked = detect_generic_knowledge_leak(final_response) or detect_model_refusal(final_response)
 
-    # Se busca la frase fija en cualquier parte de la respuesta, no solo al
-    # principio: el modelo a veces la antepone con texto propio (ej. "La
-    # respuesta es: No encuentro..."), lo que antes hacia que no se vaciaran
+    # Se busca cualquier variante de "no lo se" en toda la respuesta, no solo
+    # la frase fija exacta al principio: el modelo a veces la antepone con
+    # texto propio (ej. "La respuesta es: No encuentro...") o la parafrasea
+    # ("No tengo esta informacion"), lo que antes hacia que no se vaciaran
     # las fuentes aunque el propio modelo diga que no sabe la respuesta.
-    if no_info_phrase in final_response:
+    # Deteccion unificada con /api/patient-chat via detect_no_info_statement
+    # (agosto 2026): antes /api/chat solo comprobaba un prefijo literal mas
+    # estrecho que el usado en pacientes.
+    if detect_no_info_statement(final_response):
         final_response = CANNED_NO_INFO
         sources_used = []
     elif leaked:
@@ -182,6 +221,9 @@ def chat(request: ChatRequest):
             "has_keyword": has_keyword,
             "fragments_retrieved": len(fragments),
         }
+
+    log_usage_pattern("/api/chat", result.get("coverage"), question=request.message)
+
     return result
 
 
@@ -308,6 +350,7 @@ def patient_chat(request: PatientChatRequest):
     has_keyword = is_tb_related(request.message) or request.lang in ("ar", "ur")
 
     if not is_relevant(fragments, distances, has_keyword):
+        log_usage_pattern("/api/patient-chat", "sin_cobertura", lang=request.lang)
         return {"response": canned_no_info}
 
     context_parts = [frag for frag in fragments]
@@ -318,23 +361,13 @@ def patient_chat(request: PatientChatRequest):
 
     final_response = generate_response(PATIENT_SYSTEM_PROMPT, user_prompt)
 
-    normalized_check = final_response.lower()
-    for a, b in [("\u00e1", "a"), ("\u00e9", "e"), ("\u00ed", "i"), ("\u00f3", "o"), ("\u00fa", "u")]:
-        normalized_check = normalized_check.replace(a, b)
-
     CANNED_NO_INFO_PATIENT = "No encuentro esta informacion en los documentos disponibles."
 
-    # Si el modelo expresa "no lo se" con sus propias palabras (con o sin
-    # rodeos tipo "lo siento"), lo normalizamos a la frase fija, en vez de
-    # dejar pasar variantes que no coinciden exactamente y contaminan las
-    # estadisticas de "con respuesta / sin cobertura".
-    no_info_variants = [
-        "no encuentro esta informacion", "no encuentro informacion",
-        "no tengo esta informacion", "no tengo informacion",
-        "no dispongo de esta informacion", "no dispongo de informacion",
-        "no cuento con esta informacion", "no cuento con informacion",
-    ]
-    said_no_info = any(v in normalized_check for v in no_info_variants)
+    # Deteccion unificada con /api/chat via detect_no_info_statement
+    # (agosto 2026): misma lista de variantes de "no lo se" en ambos
+    # endpoints, para que un patron nuevo anadido en el futuro proteja a
+    # los dos a la vez en vez de mantenerse como dos listas separadas.
+    said_no_info = detect_no_info_statement(final_response)
 
     leaked = detect_generic_knowledge_leak(final_response) or detect_model_refusal(final_response)
 
@@ -357,6 +390,23 @@ def patient_chat(request: PatientChatRequest):
             "top1_distance": distances[0] if distances else None,
             "has_keyword": has_keyword,
         }
+
+    # Cobertura interna, solo para el registro de patrones de uso (no se
+    # muestra al paciente, igual que las fuentes: aqui usamos los mismos
+    # umbrales que en /api/chat para mantener las estadisticas comparables
+    # entre ambos endpoints).
+    if distances:
+        best_distance = distances[0]
+        if best_distance <= 400:
+            internal_coverage = "alta"
+        elif best_distance <= 600:
+            internal_coverage = "media"
+        else:
+            internal_coverage = "baja"
+    else:
+        internal_coverage = None
+    log_usage_pattern("/api/patient-chat", internal_coverage, lang=request.lang)
+
     return result
 
 

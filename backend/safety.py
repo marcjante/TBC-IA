@@ -224,6 +224,26 @@ def detect_model_refusal(response_text):
     return any(normalize_accents(pat) in normalized for pat in REFUSAL_PATTERNS)
 
 
+# Variantes de "no lo se" expresadas por el modelo con sus propias palabras,
+# en vez de usar la frase fija exacta del sistema. Hasta agosto 2026, esta
+# lista solo se usaba en /api/patient-chat; /api/chat solo comprobaba el
+# prefijo literal "No encuentro esta informaci", una deteccion mas estrecha
+# que dejaba pasar sin normalizar variantes como "No tengo esta informacion"
+# en el endpoint usado por profesionales. Unificada aqui para que ambos
+# endpoints detecten exactamente los mismos casos.
+NO_INFO_VARIANTS = [
+    "no encuentro esta informacion", "no encuentro informacion",
+    "no tengo esta informacion", "no tengo informacion",
+    "no dispongo de esta informacion", "no dispongo de informacion",
+    "no cuento con esta informacion", "no cuento con informacion",
+]
+
+
+def detect_no_info_statement(response_text):
+    normalized = normalize_accents(response_text)
+    return any(variant in normalized for variant in NO_INFO_VARIANTS)
+
+
 def is_tb_related(text):
     normalized = text.lower()
     normalized = normalized.replace("?", " ").replace("!", " ").replace(".", " ").replace(",", " ")
