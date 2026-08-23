@@ -29,8 +29,9 @@ from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, P
 from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal, detect_no_info_statement
 from backend.prompts import SYSTEM_PROMPT, PATIENT_SYSTEM_PROMPT
 from backend.languages import resolve_lang_name, resolve_canned_no_info
-from backend.rag import retrieve, is_relevant, index_single_pdf
+from backend.rag import retrieve, is_relevant, index_single_pdf, query_sota_fallback, verify_groundedness, query_llamafile_response, query_master_bibliography
 from backend.llm import generate_response
+
 
 app = FastAPI(title="TBC-AI Backend")
 
@@ -40,6 +41,199 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ==============================================================================
+# VERIFICACION DE AFIRMACIONES VIA LLM (segunda pasada) - agosto 2026
+# ==============================================================================
+# Alternativa/complemento al chequeo NLI de verify_groundedness() en rag.py:
+# el modelo NLI generico no distingue bien sustituciones finas de un termino
+# concreto por otro con la misma plantilla de frase (ej. "ansiedad" -> "soledad"
+# manteniendo "es un sintoma comun de tuberculosis"). Se le pide al propio LLM
+# que revise sus afirmaciones contra el contexto, en una llamada aparte.
+# Solo informativo (debug_info), no altera la respuesta real al paciente.
+
+VERIFICATION_SYSTEM_PROMPT = """Eres un revisor clinico. Se te da un CONTEXTO (fragmentos de fuentes documentales) y una RESPUESTA que otro asistente genero a partir de ese contexto para un paciente o profesional.
+
+Tu tarea: identifica frases de la RESPUESTA que afirman algo clinico o factual concreto que NO esta respaldado, ni literalmente ni por una inferencia razonable, en el CONTEXTO. El asistente que genero la respuesta a veces "rellena" con afirmaciones inventadas que sustituyen un termino del contexto por otro parecido (por ejemplo, el contexto habla de ansiedad y la respuesta afirma algo especifico sobre soledad, sin que el contexto lo respalde).
+
+NO marques:
+- Frases genericas de acompanamiento ("habla con tu equipo medico", "no estas solo en esto").
+- Reformulaciones fieles del contexto, aunque cambien las palabras.
+- Recomendaciones de sentido comun no especificas (respirar hondo, hablar con alguien de confianza).
+
+SI marca:
+- Afirmaciones especificas sobre sintomas, causas, pronosticos, o tratamientos que no aparecen en el contexto.
+
+Responde EXCLUSIVAMENTE con un JSON con este formato exacto, sin texto antes ni despues:
+{"unsupported_claims": ["frase exacta 1", "frase exacta 2"]}
+
+Si todas las frases estan respaldadas, responde exactamente:
+{"unsupported_claims": []}
+"""
+
+
+def parse_verification_response(raw):
+    """Extrae la lista unsupported_claims del texto devuelto por el LLM,
+    tolerando que venga envuelto en bloques de codigo o con texto alrededor
+    (Llama a veces no sigue la instruccion de "solo JSON" al pie de la letra).
+    Devuelve None si no se puede interpretar nada (fail-open)."""
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`")
+        if cleaned.lower().startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+
+    try:
+        parsed = json.loads(cleaned)
+        claims = parsed.get("unsupported_claims", [])
+        return claims if isinstance(claims, list) else None
+    except (json.JSONDecodeError, AttributeError):
+        pass
+
+    match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+    if match:
+        try:
+            parsed = json.loads(match.group(0))
+            claims = parsed.get("unsupported_claims", [])
+            return claims if isinstance(claims, list) else None
+        except (json.JSONDecodeError, AttributeError):
+            return None
+    return None
+
+
+def normalize_text_for_claim_check(text):
+    text = text.lower()
+    for a, b in [("\u00e1", "a"), ("\u00e9", "e"), ("\u00ed", "i"), ("\u00f3", "o"), ("\u00fa", "u"), ("\u00f1", "n")]:
+        text = text.replace(a, b)
+    text = re.sub(r"[^\w\s]", " ", text)
+    return text
+
+
+def claim_actually_in_response(claim, response_text, threshold=0.5):
+    """Comprueba que una afirmacion marcada por el verificador realmente
+    aparece (por solapamiento de palabras) en el texto de la respuesta
+    revisada. Descubierto en pruebas (agosto 2026): el propio LLM
+    verificador puede marcar una frase que ni siquiera esta en el texto
+    original — una alucinacion del verificador, no una deteccion real."""
+    claim_words = set(normalize_text_for_claim_check(claim).split())
+    if not claim_words:
+        return False
+    response_words = set(normalize_text_for_claim_check(response_text).split())
+    overlap = len(claim_words & response_words) / len(claim_words)
+    return overlap >= threshold
+
+
+def verify_claims_with_llm(sources_texts, response_text):
+    """Pide al propio LLM (via generate_response, ya usado en el resto de
+    TBC-AI) que revise la respuesta ya generada contra las fuentes, en una
+    llamada aparte. NO decide nada sobre la respuesta: solo informa.
+    Devuelve None si falla cualquier paso (fail-open, no bloquea el flujo
+    normal por un fallo de esta verificacion adicional).
+
+    Filtra ademas las afirmaciones marcadas que no aparecen realmente en
+    response_text (alucinaciones del propio verificador, ver
+    claim_actually_in_response)."""
+    if not sources_texts:
+        return None
+
+    # Limitar el tamaño del contexto que ve el VERIFICADOR (no afecta al
+    # contexto usado para generar la respuesta real, solo a esta segunda
+    # llamada de revision). Con contextos muy largos (muchas fuentes) el
+    # verificador puede "distraerse" y responder una pregunta que aparece
+    # dentro de las fuentes en vez de hacer la comparacion pedida —
+    # detectado en pruebas reales el 22 de agosto de 2026 con 10 fuentes.
+    MAX_VERIFIER_CONTEXT_CHARS = 6000
+    context_text = "\n\n---\n\n".join(sources_texts)
+    context_for_verifier = context_text
+    truncated = False
+    if len(context_for_verifier) > MAX_VERIFIER_CONTEXT_CHARS:
+        context_for_verifier = context_for_verifier[:MAX_VERIFIER_CONTEXT_CHARS] + "\n\n[...contexto recortado para la verificacion...]"
+        truncated = True
+
+    # La instruccion se repite al FINAL, despues del contexto, para
+    # anclar mejor la tarea cuando el contexto es largo (evita que el
+    # modelo responda a algo que aparece dentro del propio contexto).
+    user_msg = (
+        f"CONTEXTO:\n{context_for_verifier}\n\nRESPUESTA A REVISAR:\n{response_text}\n\n"
+        "Recuerda: tu unica tarea es responder EXCLUSIVAMENTE con el JSON pedido "
+        "al principio, comparando la RESPUESTA A REVISAR contra el CONTEXTO. "
+        "No respondas ninguna otra pregunta que pueda aparecer mencionada dentro "
+        "del CONTEXTO."
+    )
+    print(f"[DEBUG verify_claims_with_llm] Tamaño del contexto enviado: {len(context_for_verifier)} caracteres "
+          f"({'recortado de ' + str(len(context_text)) if truncated else 'completo'}), {len(sources_texts)} fuentes.")
+    try:
+        raw = generate_response(VERIFICATION_SYSTEM_PROMPT, user_msg)
+    except Exception as e:
+        print(f"[DEBUG verify_claims_with_llm] Fallo en generate_response: {type(e).__name__}: {e}")
+        return None
+    claims = parse_verification_response(raw)
+    if claims is None:
+        print(f"[DEBUG verify_claims_with_llm] No se pudo parsear la respuesta del verificador. Raw: {raw!r}")
+        return None
+    return [c for c in claims if claim_actually_in_response(c, response_text)]
+
+
+# ==============================================================================
+# CONSENSO ENTRE DOS MODELOS (Ollama + Llamafile/Mistral) - agosto 2026
+# ==============================================================================
+# Señal secundaria (complementaria a verify_claims_with_llm, que es la
+# principal): genera una respuesta independiente con un segundo modelo
+# para la misma pregunta y contexto, y compara si coinciden en sus
+# afirmaciones. Probado hoy como prototipo en dual_model_check.py: util
+# para detectar cuando un modelo añade algo que el otro no dice, pero NO
+# sustituye a la verificacion contra fuentes (si los dos modelos comparten
+# el mismo sesgo de entrenamiento, pueden fabricar la misma idea sin que
+# esto lo note - ver seccion 8.3 del resumen del sistema).
+
+COMPARATOR_SYSTEM_PROMPT = """Se te dan dos respuestas (A y B) generadas por dos modelos distintos a la misma pregunta clinica sobre tuberculosis, a partir del mismo contexto documental.
+
+Identifica afirmaciones clinicas o factuales CONCRETAS que aparecen en una respuesta pero no en la otra (sintomas, causas, tratamientos, pronosticos). No cuentes frases genericas de acompanamiento ("habla con tu equipo medico") ni reformulaciones equivalentes con otras palabras.
+
+Responde EXCLUSIVAMENTE con un JSON con este formato exacto, sin texto antes ni despues:
+{"claims_only_in_a": ["..."], "claims_only_in_b": ["..."], "agreement": "alto"|"medio"|"bajo"}
+
+"agreement" = "alto" si no hay afirmaciones discrepantes relevantes; "medio" si hay alguna discrepancia menor; "bajo" si hay afirmaciones claramente contradictorias o solo una de las dos respuestas las menciona."""
+
+
+def parse_comparator_response(raw):
+    """Extrae el JSON del comparador, tolerando bloques de codigo o texto
+    alrededor (mismo patron que parse_verification_response)."""
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`")
+        if cleaned.lower().startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+    try:
+        return json.loads(cleaned)
+    except (json.JSONDecodeError, AttributeError):
+        pass
+    match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except (json.JSONDecodeError, AttributeError):
+            return None
+    return None
+
+
+def compare_with_llamafile(response_a, response_b):
+    """Usa Ollama (via generate_response, ya validado hoy como buen juez)
+    para comparar dos respuestas de modelos distintos a la misma pregunta.
+    Devuelve None si falla cualquier paso (fail-open)."""
+    user_prompt = f"RESPUESTA A:\n{response_a}\n\nRESPUESTA B:\n{response_b}"
+    try:
+        raw = generate_response(COMPARATOR_SYSTEM_PROMPT, user_prompt)
+    except Exception as e:
+        print(f"[DEBUG compare_with_llamafile] Fallo en generate_response: {type(e).__name__}: {e}")
+        return None
+    parsed = parse_comparator_response(raw)
+    if parsed is None:
+        print(f"[DEBUG compare_with_llamafile] No se pudo parsear la respuesta del comparador. Raw: {raw!r}")
+    return parsed
 
 
 class HistoryTurn(BaseModel):
@@ -145,24 +339,65 @@ def chat(request: ChatRequest):
     fragments, metadatas, distances = retrieve(retrieval_query, request.top_k)
     has_keyword = is_tb_related(request.message)
 
+    fallback_used = False
     if not is_relevant(fragments, distances, has_keyword):
-        log_usage_pattern("/api/chat", "sin_cobertura", question=request.message)
-        return {
-            "response": "No encuentro esta informacion en los documentos disponibles.",
-            "sources": [],
-        }
+        fb_fragments, fb_metadatas, fb_info = query_sota_fallback(retrieval_query)
+
+        if fb_info and isinstance(fb_info, dict) and fb_info.get("alert"):
+            log_usage_pattern("/api/chat", "alerta_clinica", question=request.message)
+            return {
+                "response": " ".join(fb_info["alert"]),
+                "sources": [],
+                "coverage": "alerta_clinica",
+            }
+
+        if fb_fragments:
+            fragments, metadatas = fb_fragments, fb_metadatas
+            distances = []
+            fallback_used = True
+        else:
+            log_usage_pattern("/api/chat", "sin_cobertura", question=request.message)
+            return {
+                "response": "No encuentro esta informacion en los documentos disponibles.",
+                "sources": [],
+            }
 
     context_parts = []
     sources_used = []
     for frag, meta in zip(fragments, metadatas):
+        page_part = ", pagina: " + str(meta["page"]) if meta.get("page") is not None else ""
         context_parts.append(
-            "[Fuente: " + meta["source"] + ", categoria: " + meta["category"] + ", pagina: " + str(meta["page"]) + "]\n" + frag
+            "[Fuente: " + meta["source"] + ", categoria: " + meta["category"] + page_part + "]\n" + frag
         )
         sources_used.append({
             "source": meta["source"],
             "category": meta["category"],
-            "page": meta["page"],
+            "page": meta.get("page"),
             "text": frag,
+        })
+
+    # Bibliografia cientifica verificada adicional (PubMed + Europe PMC,
+    # confirmado por PubTator3, validado por CrossRef — ver
+    # tbc-master-database/). Señal complementaria: no sustituye a las
+    # fuentes clinicas de arriba (FAQ/PDF), solo añade literatura reciente
+    # cuando esta disponible. Fail-open: si el servicio (puerto 8002) no
+    # responde, sigue funcionando igual que hasta ahora, sin ella.
+    bibliography_results = query_master_bibliography(request.message, limit=2)
+    for bib in bibliography_results:
+        if bib.get("retraction_status") != "ninguna":
+            continue
+        cite = f"{bib.get('journal') or 'revista desconocida'} ({bib.get('year') or 's.f.'})"
+        context_parts.append(
+            f"[Fuente: bibliografia cientifica verificada, {cite}]\n"
+            f"{bib.get('title', '')}\n{bib.get('abstract', '')}"
+        )
+        sources_used.append({
+            "source": f"PubMed/Europe PMC - {cite}",
+            "category": "bibliografia_cientifica",
+            "page": None,
+            "text": bib.get("abstract") or bib.get("title", ""),
+            "doi": bib.get("doi"),
+            "pmid": bib.get("pmid"),
         })
 
     context_text = "\n\n---\n\n".join(context_parts)
@@ -202,7 +437,9 @@ def chat(request: ChatRequest):
     # mayoria de respuestas bien fundamentadas caian por debajo de 480).
     # No sustituye una verificacion clinica humana, es solo una senal
     # orientativa para el profesional.
-    if distances and sources_used:
+    if fallback_used and sources_used:
+        result["coverage"] = "complementaria"
+    elif distances and sources_used:
         best_distance = distances[0]
         if best_distance <= 400:
             result["coverage"] = "alta"
@@ -220,7 +457,25 @@ def chat(request: ChatRequest):
             "top1_distance": distances[0] if distances else None,
             "has_keyword": has_keyword,
             "fragments_retrieved": len(fragments),
+            "fallback_used": fallback_used,
         }
+
+    if request.debug and sources_used:
+        llm_unsupported_claims = verify_claims_with_llm(
+            [s["text"] for s in sources_used],
+            final_response,
+        )
+        if llm_unsupported_claims is not None:
+            result.setdefault("debug_info", {})["llm_unsupported_claims"] = llm_unsupported_claims
+
+        response_b = query_llamafile_response(context_text, request.message)
+        if response_b is not None:
+            dual_model_comparison = compare_with_llamafile(final_response, response_b)
+            if dual_model_comparison is not None:
+                result.setdefault("debug_info", {})["dual_model_comparison"] = {
+                    "response_b": response_b,
+                    **dual_model_comparison,
+                }
 
     log_usage_pattern("/api/chat", result.get("coverage"), question=request.message)
 
@@ -349,9 +604,22 @@ def patient_chat(request: PatientChatRequest):
     # defecto y usamos el umbral permisivo (750).
     has_keyword = is_tb_related(request.message) or request.lang in ("ar", "ur")
 
+    fallback_used = False
     if not is_relevant(fragments, distances, has_keyword):
-        log_usage_pattern("/api/patient-chat", "sin_cobertura", lang=request.lang)
-        return {"response": canned_no_info}
+        fb_fragments, fb_metadatas, fb_info = query_sota_fallback(retrieval_query)
+
+        if fb_info and isinstance(fb_info, dict) and fb_info.get("alert"):
+            log_usage_pattern("/api/patient-chat", "alerta_clinica", lang=request.lang)
+            alert_text = " ".join(fb_info["alert"])
+            return {"response": f"{alert_text} {canned_no_info}"}
+
+        if fb_fragments:
+            fragments, metadatas = fb_fragments, fb_metadatas
+            distances = []
+            fallback_used = True
+        else:
+            log_usage_pattern("/api/patient-chat", "sin_cobertura", lang=request.lang)
+            return {"response": canned_no_info}
 
     context_parts = [frag for frag in fragments]
     context_text = "\n\n---\n\n".join(context_parts)
@@ -389,13 +657,30 @@ def patient_chat(request: PatientChatRequest):
             "top_k": 8,
             "top1_distance": distances[0] if distances else None,
             "has_keyword": has_keyword,
+            "fallback_used": fallback_used,
         }
+
+        if fragments:
+            llm_unsupported_claims = verify_claims_with_llm(fragments, final_response)
+            if llm_unsupported_claims is not None:
+                result["debug_info"]["llm_unsupported_claims"] = llm_unsupported_claims
+
+            response_b = query_llamafile_response(context_text, request.message)
+            if response_b is not None:
+                dual_model_comparison = compare_with_llamafile(final_response, response_b)
+                if dual_model_comparison is not None:
+                    result["debug_info"]["dual_model_comparison"] = {
+                        "response_b": response_b,
+                        **dual_model_comparison,
+                    }
 
     # Cobertura interna, solo para el registro de patrones de uso (no se
     # muestra al paciente, igual que las fuentes: aqui usamos los mismos
     # umbrales que en /api/chat para mantener las estadisticas comparables
     # entre ambos endpoints).
-    if distances:
+    if fallback_used:
+        internal_coverage = "complementaria"
+    elif distances:
         best_distance = distances[0]
         if best_distance <= 400:
             internal_coverage = "alta"

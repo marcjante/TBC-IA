@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Base de datos y datos generados
+tbc_knowledge_repository/
+*.db
+*.sqlite3
+*.ris
+
+# Modelos descargados (sentence-transformers / HF cache)
+.cache/
+models/
+
+# Entorno
+.env
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+data/

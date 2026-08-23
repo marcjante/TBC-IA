@@ -191,7 +191,7 @@ def verify_groundedness(response_text, sources, timeout=15):
 LLAMAFILE_URL = "http://127.0.0.1:8081"
 
 
-def query_llamafile_response(context_text, question, timeout=90):
+def query_llamafile_response(context_text, question, timeout=30):
     """Genera una respuesta independiente con un segundo modelo (Mistral 7B
     via Llamafile, servido aparte en http://127.0.0.1:8081) para la misma
     pregunta y el mismo contexto que uso Ollama. Es la mitad "B" del
@@ -219,33 +219,5 @@ def query_llamafile_response(context_text, question, timeout=90):
         resp.raise_for_status()
         data = resp.json()
         return data["choices"][0]["message"]["content"]
-    except (requests.RequestException, ValueError, KeyError, IndexError) as e:
-        print(f"[DEBUG query_llamafile_response] Fallo: {type(e).__name__}: {e}")
+    except (requests.RequestException, ValueError, KeyError, IndexError):
         return None
-
-
-BIBLIOGRAPHY_API_URL = "http://127.0.0.1:8002"
-
-
-def query_master_bibliography(query_text, limit=3, timeout=10):
-    """Consulta el servicio de bibliografia verificada (tbc_master.db:
-    PubMed + Europe PMC, confirmado por PubTator3, validado por CrossRef,
-    con estado de retraccion — ver tbc-master-database/bibliography_api.py).
-
-    Señal complementaria a las fuentes clinicas (FAQ/PDF) ya usadas en
-    /api/chat: aporta literatura cientifica reciente cuando esta
-    disponible, no las sustituye.
-
-    Fail-open: devuelve lista vacia si el servicio no responde o falla,
-    para no romper el flujo normal de /api/chat si el servicio de
-    bibliografia no esta corriendo."""
-    try:
-        resp = requests.get(
-            f"{BIBLIOGRAPHY_API_URL}/v1/bibliography",
-            params={"query": query_text, "limit": limit},
-            timeout=timeout,
-        )
-        resp.raise_for_status()
-        return resp.json().get("results", [])
-    except (requests.RequestException, ValueError):
-        return []

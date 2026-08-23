@@ -31,3 +31,6 @@ PATIENT_DIR = os.path.join(PROJECT_ROOT, "frontend_patient")
 
 chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
 collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
+
+SOTA_ENGINE_URL = "http://127.0.0.1:8000"
+SOTA_ENGINE_API_KEY = os.environ.get("SOTA_ENGINE_API_KEY", "tbc_ia_secret_v7")

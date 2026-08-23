@@ -29,3 +29,22 @@ tbc-ai-auditoria.zip
 Seguiment TBC : ITL.app/
 server.log
 usage_patterns.jsonl
+
+# --- Añadido al unificar los proyectos dentro de TBC IA (agosto 2026) ---
+
+# Llamafile / modelos binarios (varios GB, nunca deben ir a git)
+llamafile-test/
+
+# Entornos virtuales de los proyectos añadidos
+tbc-ia-sota-engine/venv/
+tbc-master-database/venv/
+
+# Bases de datos que se regeneran solas (harvester / motor complementario)
+tbc-ia-sota-engine/tbc_knowledge_repository/
+tbc-master-database/tbc_master.db
+
+# Copias de seguridad (zips, no tiene sentido versionarlos)
+Copias de seguridad TBC/
+
+# Banco de datos harvesteado del motor complementario (se regenera)
+tbc-ia-sota-engine/data/
