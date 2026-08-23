@@ -29,7 +29,7 @@ from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, P
 from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal, detect_no_info_statement
 from backend.prompts import SYSTEM_PROMPT, PATIENT_SYSTEM_PROMPT
 from backend.languages import resolve_lang_name, resolve_canned_no_info
-from backend.rag import retrieve, is_relevant, index_single_pdf, query_sota_fallback, verify_groundedness, query_llamafile_response, query_master_bibliography, search_pubmed_live, get_drug_safety_info
+from backend.rag import retrieve, is_relevant, index_single_pdf, query_sota_fallback, verify_groundedness, query_llamafile_response, query_master_bibliography, search_pubmed_live, get_drug_safety_info, hybrid_retrieve
 from backend.llm import generate_response
 
 
@@ -528,7 +528,7 @@ def chat(request: ChatRequest):
 
     retrieval_query = build_retrieval_query(request.message, request.history)
     retrieval_query = expand_query(retrieval_query)
-    fragments, metadatas, distances = retrieve(retrieval_query, request.top_k)
+    fragments, metadatas, distances = hybrid_retrieve(retrieval_query, request.top_k)
     has_keyword = is_tb_related(request.message)
 
     fallback_used = False
