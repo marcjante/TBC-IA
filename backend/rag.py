@@ -314,3 +314,153 @@ def query_master_bibliography(query_text, limit=3, timeout=10):
         return resp.json().get("results", [])
     except (requests.RequestException, ValueError):
         return []
+
+
+# ==============================================================================
+# CIMA / AEMPS — ficha tecnica oficial de medicamentos autorizados en España
+# ==============================================================================
+# A diferencia de PubMed (investigacion) o las guias OMS/CDC/ECDC
+# (recomendaciones internacionales), CIMA da la ficha tecnica OFICIAL
+# vigente en España: posologia, contraindicaciones, interacciones,
+# reacciones adversas. Documentacion: https://cima.aemps.es/cima/rest/
+
+CIMA_BASE = "https://cima.aemps.es/cima/rest"
+CIMA_SECCION_CONTRAINDICACIONES = "4.3"
+CIMA_SECCION_INTERACCIONES = "4.5"
+CIMA_SECCION_REACCIONES_ADVERSAS = "4.8"
+
+
+def cima_search_medication(name, limit=10, timeout=10):
+    """Busca medicamentos en CIMA. El parametro "nombre" de la API de CIMA
+    busca SOLO por nombre comercial (ej. "Rimactan"), no por principio
+    activo (ej. "rifampicina") — confirmado con pruebas reales. Por eso
+    se prueba primero por principio activo (practiv1, el caso mas
+    habitual: alguien escribe el nombre generico del farmaco), y solo si
+    no hay resultados se prueba por nombre comercial.
+
+    Fail-open: lista vacia si falla."""
+    def _parse(data):
+        # IMPORTANTE: no recortar aqui a "limit" — CIMA devuelve sus
+        # resultados ordenados alfabeticamente por marca comercial, asi
+        # que recortar antes de priorizar por nombre dejaria fuera los
+        # genericos "PARACETAMOL X" si empiezan por una letra mas
+        # avanzada que las marcas comerciales (ej. "ACTRON", "ANTIDOL").
+        # Se recorta al final, despues de reordenar por prioridad.
+        return [{
+            "nregistro": r.get("nregistro"),
+            "nombre": r.get("nombre"),
+            "laboratorio": r.get("labtitular"),
+            "comercializado": r.get("comerc"),
+        } for r in data.get("resultados", [])]
+
+    def _prioritize_name_match(resultados, term):
+        """Pone primero los medicamentos cuyo nombre comercial contiene
+        literalmente el termino buscado (suelen ser el generico "puro"),
+        por delante de marcas que no lo mencionan (a menudo combinados
+        con otros principios activos, ej. "ACTRON" para "paracetamol")."""
+        term_lower = term.lower()
+        con_nombre = [r for r in resultados if term_lower in (r.get("nombre") or "").lower()]
+        sin_nombre = [r for r in resultados if term_lower not in (r.get("nombre") or "").lower()]
+        return con_nombre + sin_nombre
+
+    try:
+        resp = requests.get(
+            f"{CIMA_BASE}/medicamentos",
+            params={"practiv1": name, "pagina": 1},
+            timeout=timeout,
+        )
+        resp.raise_for_status()
+        resultados = _parse(resp.json())
+        if resultados:
+            return _prioritize_name_match(resultados, name)[:limit]
+
+        # Sin resultados por principio activo: probar por nombre comercial
+        resp2 = requests.get(
+            f"{CIMA_BASE}/medicamentos",
+            params={"nombre": name, "pagina": 1},
+            timeout=timeout,
+        )
+        resp2.raise_for_status()
+        return _parse(resp2.json())[:limit]
+    except (requests.RequestException, ValueError, KeyError):
+        return []
+
+
+def cima_get_ficha_tecnica_section(nregistro, seccion, timeout=10):
+    """Contenido de una seccion concreta de la ficha tecnica oficial
+    (tipo=1). CIMA devuelve este endpoint en DOS formatos distintos segun
+    la seccion — confirmado con pruebas reales: algunas secciones dan
+    texto plano directo (Content-Type: text/plain), otras dan una LISTA
+    JSON de objetos con una clave "contenido" (con entidades HTML
+    numericas dentro, ej. &#193; en vez de "Á"). Esta funcion detecta
+    cual de los dos formatos llego y lo normaliza a texto.
+
+    Fail-open: None si falla o el medicamento no tiene esa seccion."""
+    import json as json_module
+
+    try:
+        resp = requests.get(
+            f"{CIMA_BASE}/docSegmentado/contenido/1",
+            params={"nregistro": nregistro, "seccion": seccion},
+            timeout=timeout,
+        )
+        resp.raise_for_status()
+        text = resp.text.strip()
+        if not text:
+            return None
+
+        # Formato JSON (lista de objetos con "contenido"). CIMA devuelve
+        # a veces JSON tecnicamente invalido (saltos de linea sin escapar
+        # dentro de las cadenas) — confirmado con pruebas reales, de ahi
+        # strict=False para tolerarlo.
+        if text.startswith("["):
+            try:
+                data = json_module.loads(text, strict=False)
+                if isinstance(data, list) and data:
+                    return data[0].get("contenido")
+            except (ValueError, KeyError, IndexError, AttributeError):
+                pass
+
+        # Formato texto plano directo
+        return text
+    except requests.RequestException:
+        return None
+
+
+def _cima_strip_html(html_text):
+    """Quita etiquetas HTML y decodifica entidades HTML numericas
+    (&#193; -> Á), necesario porque algunas secciones de CIMA (ver
+    cima_get_ficha_tecnica_section) devuelven el contenido asi codificado."""
+    import re
+    import html as html_module
+    if not html_text:
+        return ""
+    text = html_module.unescape(html_text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def get_drug_safety_info(drug_name, timeout=10):
+    """Busca el medicamento en CIMA (prioriza el comercializado) y
+    devuelve sus secciones de seguridad ya en texto plano: contraindicaciones,
+    interacciones, reacciones adversas. Fail-open: None si no se
+    encuentra o falla."""
+    candidatos = cima_search_medication(drug_name, timeout=timeout)
+    comercializados = [c for c in candidatos if c.get("comercializado")]
+    elegido = comercializados[0] if comercializados else (candidatos[0] if candidatos else None)
+    if elegido is None:
+        return None
+
+    nregistro = elegido["nregistro"]
+    contraindicaciones = cima_get_ficha_tecnica_section(nregistro, CIMA_SECCION_CONTRAINDICACIONES, timeout=timeout)
+    interacciones = cima_get_ficha_tecnica_section(nregistro, CIMA_SECCION_INTERACCIONES, timeout=timeout)
+    reacciones_adversas = cima_get_ficha_tecnica_section(nregistro, CIMA_SECCION_REACCIONES_ADVERSAS, timeout=timeout)
+
+    return {
+        "nregistro": nregistro,
+        "nombre": elegido["nombre"],
+        "laboratorio": elegido.get("laboratorio"),
+        "contraindicaciones": _cima_strip_html(contraindicaciones),
+        "interacciones": _cima_strip_html(interacciones),
+        "reacciones_adversas": _cima_strip_html(reacciones_adversas),
+    }
