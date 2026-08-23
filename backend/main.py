@@ -652,7 +652,13 @@ def chat(request: ChatRequest):
             "fallback_used": fallback_used,
         }
 
-    if request.debug and sources_used:
+    # Verificacion de afirmaciones: SIEMPRE se ejecuta si hay fuentes, no
+    # solo en modo debug. Antes solo corria con debug=true, lo que
+    # significaba que las consultas reales (sin ese parametro) nunca se
+    # beneficiaban de esta comprobacion de seguridad — hallazgo del 23 de
+    # agosto de 2026, corregido aqui.
+    llm_unsupported_claims = None
+    if sources_used:
         llm_unsupported_claims = verify_claims_with_llm(
             [s["text"] for s in sources_used],
             final_response,
@@ -660,6 +666,13 @@ def chat(request: ChatRequest):
         if llm_unsupported_claims is not None:
             result.setdefault("debug_info", {})["llm_unsupported_claims"] = llm_unsupported_claims
 
+    # Mistral (critico selectivo): solo se ejecuta si hay señal de riesgo
+    # o duda real (afirmaciones sin respaldo detectadas, o cobertura
+    # baja/complementaria) — no en cada pregunta. Antes se ejecutaba solo
+    # en modo debug, sin ningun criterio de riesgo (Fase 6 de la
+    # propuesta de arquitectura TBC-AI v2, agosto 2026).
+    riesgo_o_duda = bool(llm_unsupported_claims) or result.get("coverage") in ("baja", "complementaria")
+    if riesgo_o_duda and sources_used:
         response_b = query_llamafile_response(context_text, request.message)
         if response_b is not None:
             dual_model_comparison = compare_with_llamafile(final_response, response_b)

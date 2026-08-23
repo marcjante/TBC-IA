@@ -308,6 +308,16 @@ def query_llamafile_response(context_text, question, timeout=90):
     Fail-open: devuelve None si el servidor no responde, esta caido, o el
     formato de respuesta no es el esperado. Nunca lanza excepcion, para no
     romper el flujo normal de /api/chat si Llamafile no esta corriendo."""
+    # Recorte del contexto para Llamafile especificamente (no afecta al
+    # contexto completo usado por Llama 3.1 para la respuesta principal).
+    # Hallazgo del 23 de agosto de 2026: tras hybrid_retrieve() (mas
+    # fuentes por pregunta), Llamafile empezo a fallar por timeout de
+    # forma consistente con contextos grandes — no estaba colgado,
+    # simplemente tardaba mas de 90s en procesarlos en este hardware.
+    MAX_LLAMAFILE_CONTEXT_CHARS = 6000
+    if len(context_text) > MAX_LLAMAFILE_CONTEXT_CHARS:
+        context_text = context_text[:MAX_LLAMAFILE_CONTEXT_CHARS] + "\n\n[...contexto recortado para el segundo modelo...]"
+
     system_prompt = (
         "Eres un asistente clinico. Responde la pregunta del paciente "
         "usando exclusivamente el CONTEXTO proporcionado. No inventes "
