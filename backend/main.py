@@ -173,7 +173,43 @@ def verify_claims_with_llm(sources_texts, response_text):
     if claims is None:
         print(f"[DEBUG verify_claims_with_llm] No se pudo parsear la respuesta del verificador. Raw: {raw!r}")
         return None
-    return [c for c in claims if claim_actually_in_response(c, response_text)]
+    return [
+        c for c in claims
+        if claim_actually_in_response(c, response_text) and not is_generic_advice(c)
+    ]
+
+
+GENERIC_ADVICE_PATTERNS = [
+    "mantén un registro de tus síntomas",
+    "mantén una buena higiene",
+    "sigue las instrucciones de tu médico",
+    "sigue las instrucciones de tu equipo",
+    "habla con tu equipo de tratamiento",
+    "consulta a tu médico",
+    "consulta con tu médico",
+    "busca atención médica",
+    "contacta con tu médico",
+    "comunícate con tu médico",
+]
+
+
+def is_generic_advice(claim):
+    """Descarta frases que son puro consejo generico de acompañamiento
+    (ej. "mantén una buena higiene"), aunque el verificador LLM las haya
+    marcado como "no respaldadas" — su propia instruccion ya le pide no
+    marcarlas, pero no siempre lo cumple de forma consistente. Solo
+    descarta si la frase es CASI ENTERAMENTE el consejo generico (queda
+    muy poco texto tras quitarlo); si la frase mezcla el consejo con
+    contenido clinico especifico adicional, no se descarta."""
+    import re
+    normalized = re.sub(r"[^\w\s]", "", claim.strip().lower())
+    for pattern in GENERIC_ADVICE_PATTERNS:
+        pattern_norm = re.sub(r"[^\w\s]", "", pattern)
+        if pattern_norm in normalized:
+            remainder = normalized.replace(pattern_norm, "", 1).strip()
+            if len(remainder) < 20:
+                return True
+    return False
 
 
 # ==============================================================================
@@ -363,6 +399,33 @@ CANNED_RIESGO_AUTOLESION = (
 )
 
 
+QUERY_EXPANSION_SYSTEM_PROMPT = """Eres un asistente que amplia consultas de busqueda para un sistema de recuperacion de informacion medica sobre tuberculosis. Dada una pregunta de un paciente o profesional, genera de 3 a 5 terminos o frases medicas relacionadas (sinonimos, nombres alternativos, terminologia clinica formal) que ayuden a encontrar documentos relevantes, aunque la persona no use esas palabras exactas.
+
+Responde EXCLUSIVAMENTE con los terminos adicionales separados por comas, sin explicaciones ni frases completas. Ejemplo:
+
+Pregunta: "me duele mucho la barriga"
+Respuesta: dolor abdominal, molestias gastrointestinales, dolor epigastrico
+
+No repitas palabras que ya aparecen en la pregunta original. No inventes sintomas ni farmacos que no esten relacionados con la pregunta."""
+
+
+def expand_query(original_query, timeout=15):
+    """Genera terminos relacionados para ampliar la consulta de
+    recuperacion (mejora el recall cuando la persona no usa la
+    terminologia clinica exacta de las guias). Fail-open: devuelve la
+    consulta original sin cambios si falla, si la respuesta esta vacia,
+    o si es sospechosamente larga (señal de que el modelo no siguio el
+    formato pedido)."""
+    try:
+        raw = generate_response(QUERY_EXPANSION_SYSTEM_PROMPT, original_query)
+        terminos = raw.strip()
+        if not terminos or len(terminos) > 300:
+            return original_query
+        return f"{original_query} {terminos}"
+    except Exception:
+        return original_query
+
+
 def classify_intent(message, timeout=15):
     """Clasifica la intencion del mensaje ANTES de cualquier recuperacion
     documental (independiente de si ChromaDB encuentra algo relevante).
@@ -390,6 +453,7 @@ def chat(request: ChatRequest):
         return {"response": CANNED_RIESGO_AUTOLESION, "sources": [], "coverage": "riesgo_autolesion"}
 
     retrieval_query = build_retrieval_query(request.message, request.history)
+    retrieval_query = expand_query(retrieval_query)
     fragments, metadatas, distances = retrieve(retrieval_query, request.top_k)
     has_keyword = is_tb_related(request.message)
 
