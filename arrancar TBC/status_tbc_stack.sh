@@ -43,3 +43,10 @@ if curl -s http://127.0.0.1:8002/health > /dev/null 2>&1; then
 else
     echo "NO RESPONDE"
 fi
+
+echo -n "Panel TBC-IA (8090):         "
+if curl -s http://127.0.0.1:8090 > /dev/null 2>&1; then
+    echo "OK"
+else
+    echo "NO RESPONDE"
+fi

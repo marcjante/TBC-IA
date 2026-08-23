@@ -224,6 +224,71 @@ def query_llamafile_response(context_text, question, timeout=90):
         return None
 
 
+def search_pubmed_live(query_text, max_results=5, timeout=15):
+    """Busca en vivo directamente en PubMed (E-utilities), sin pasar por
+    la base verificada local. NO tiene verificacion de PubTator3, ni
+    validacion de CrossRef, ni deteccion de retracciones — es solo lo que
+    PubMed devuelve en el momento. Pensado para la caja de busqueda de la
+    pagina principal cuando la base local no tiene lo que se busca.
+
+    Fail-open: devuelve lista vacia si falla cualquier paso."""
+    import xml.etree.ElementTree as ET
+
+    try:
+        params = {
+            "db": "pubmed", "term": query_text, "retmax": max_results,
+            "retmode": "json",
+        }
+        resp = requests.get(
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+            params=params, timeout=timeout,
+        )
+        resp.raise_for_status()
+        pmids = resp.json().get("esearchresult", {}).get("idlist", [])
+        if not pmids:
+            return []
+
+        fetch_resp = requests.get(
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+            params={"db": "pubmed", "id": ",".join(pmids), "retmode": "xml"},
+            timeout=timeout,
+        )
+        fetch_resp.raise_for_status()
+        root = ET.fromstring(fetch_resp.content)
+
+        results = []
+        for article in root.findall(".//PubmedArticle"):
+            pmid_el = article.find(".//PMID")
+            pmid = pmid_el.text if pmid_el is not None else None
+
+            title_el = article.find(".//ArticleTitle")
+            title = "".join(title_el.itertext()) if title_el is not None else ""
+
+            abstract_parts = [
+                "".join(a.itertext()) for a in article.findall(".//AbstractText")
+            ]
+            abstract = " ".join(abstract_parts)
+
+            year_el = article.find(".//PubDate/Year")
+            year = int(year_el.text) if year_el is not None and year_el.text and year_el.text.isdigit() else None
+
+            journal_el = article.find(".//Journal/Title")
+            journal = journal_el.text if journal_el is not None else None
+
+            doi = None
+            for id_el in article.findall(".//ArticleIdList/ArticleId"):
+                if id_el.get("IdType") == "doi":
+                    doi = id_el.text
+
+            results.append({
+                "pmid": pmid, "doi": doi, "title": title, "abstract": abstract,
+                "year": year, "journal": journal,
+            })
+        return results
+    except (requests.RequestException, ET.ParseError, ValueError):
+        return []
+
+
 BIBLIOGRAPHY_API_URL = "http://127.0.0.1:8002"
 
 

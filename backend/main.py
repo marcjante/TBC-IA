@@ -29,7 +29,7 @@ from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, P
 from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal, detect_no_info_statement
 from backend.prompts import SYSTEM_PROMPT, PATIENT_SYSTEM_PROMPT
 from backend.languages import resolve_lang_name, resolve_canned_no_info
-from backend.rag import retrieve, is_relevant, index_single_pdf, query_sota_fallback, verify_groundedness, query_llamafile_response, query_master_bibliography
+from backend.rag import retrieve, is_relevant, index_single_pdf, query_sota_fallback, verify_groundedness, query_llamafile_response, query_master_bibliography, search_pubmed_live
 from backend.llm import generate_response
 
 
@@ -695,6 +695,41 @@ def patient_chat(request: PatientChatRequest):
     return result
 
 
+@app.get("/panel", response_class=HTMLResponse)
+def panel():
+    """Muestra incrustado el Panel TBC-IA (puerto 8090) con el estado de
+    los siete servicios, para verlo sin salir de TBC-AI. Si el panel no
+    esta corriendo, se ve un mensaje de error dentro del propio iframe
+    (no rompe esta pagina)."""
+    return """
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel TBC-IA (incrustado)</title>
+<style>
+  body { margin: 0; padding: 0; background: #0f1117; }
+  .topbar {
+    background: #1a1d27; color: #9098a8; padding: 10px 20px;
+    font-family: -apple-system, sans-serif; font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #2a2e3a;
+  }
+  .topbar a { color: #4ade80; text-decoration: none; }
+  iframe { width: 100%; height: calc(100vh - 41px); border: none; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <span>Panel TBC-IA — vista incrustada (puerto 8090)</span>
+    <a href="http://127.0.0.1:8090" target="_blank">Abrir en pestaña aparte ↗</a>
+  </div>
+  <iframe src="http://127.0.0.1:8090"></iframe>
+</body>
+</html>
+"""
+
+
 @app.get("/", response_class=HTMLResponse)
 def home():
     html = """
@@ -869,13 +904,180 @@ def home():
       <p>Assistent sobre guies cliniques de l'OMS, CDC i ECDC, amb cita de font i pagina en cada resposta.</p>
       <div class="status"><span class="dot"></span>Ollama · {CHAT_MODEL_PLACEHOLDER}</div>
     </a>
+    <a class="card" href="http://127.0.0.1:8090" target="_blank">
+      <span class="tag clinic">Sistema</span>
+      <h2>Panel TBC-IA</h2>
+      <p>Estat en temps real dels set serveis (Ollama, motor complementari, Llamafile, n8n, bibliografia...).</p>
+      <div class="status"><span class="dot" id="panel-dot" style="background:#888;"></span><span id="panel-text">Comprovant...</span></div>
+    </a>
+  </div>
+
+  <div class="biblio-search-section" style="max-width:900px;margin:40px auto;padding:0 20px;">
+    <h2 style="margin-bottom:12px;">Cerca a la bibliografia verificada</h2>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <input id="biblio-query" type="text" placeholder="p.ex. isoniazid resistance"
+             style="flex:1;padding:10px;border-radius:6px;border:1px solid #ccc;font-size:14px;"
+             onkeydown="if(event.key==='Enter') searchBiblio()">
+      <button onclick="searchBiblio()"
+              style="padding:10px 20px;border-radius:6px;border:none;background:#1F4B4C;color:white;cursor:pointer;font-size:14px;">
+        Cercar (base verificada)
+      </button>
+      <button onclick="searchBiblioLive()"
+              style="padding:10px 20px;border-radius:6px;border:1px solid #1F4B4C;background:white;color:#1F4B4C;cursor:pointer;font-size:14px;">
+        Cercar en viu a PubMed
+      </button>
+    </div>
+    <div id="biblio-results"></div>
   </div>
 
   <footer>servidor local actiu — cap document ni conversa surt d'aquest ordinador</footer>
+  <script>
+    fetch('/api/panel-status').then(r => r.json()).then(d => {
+      const dot = document.getElementById('panel-dot');
+      const text = document.getElementById('panel-text');
+      if (d.connected) {
+        dot.style.background = '#4ade80';
+        text.textContent = 'Panel connectat';
+      } else {
+        dot.style.background = '#f87171';
+        text.textContent = 'Panel no connectat';
+      }
+    }).catch(() => {
+      document.getElementById('panel-text').textContent = 'Panel no connectat';
+    });
+
+    let currentBiblioResults = [];
+
+    function renderBiblioResults(results, resultsDiv, live) {
+      currentBiblioResults = results || [];
+      if (!results || !results.length) {
+        resultsDiv.innerHTML = '<p>Sense resultats.</p>';
+        return;
+      }
+      const badge = live
+        ? '<span style="background:#fef3c7;color:#92400e;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">EN VIU · SENSE VERIFICAR</span>'
+        : '<span style="background:#dcfce7;color:#166534;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">VERIFICAT</span>';
+      resultsDiv.innerHTML = results.map((r, i) => `
+        <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:10px;">
+          <strong>${r.title || ''}</strong>${badge}<br>
+          <span style="color:#666;font-size:13px;">${r.journal || 'revista desconeguda'} (${r.year || 's.f.'}) — PMID: ${r.pmid || '-'}</span>
+          <p style="font-size:14px;margin-top:8px;" id="biblio-abstract-${i}">${(r.abstract || '').slice(0, 300)}${(r.abstract || '').length > 300 ? '...' : ''}</p>
+          <button onclick="translateCard(${i})"
+                  style="font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid #1F4B4C;background:white;color:#1F4B4C;cursor:pointer;margin-bottom:6px;">
+            Traduir al castella
+          </button>
+          <div id="biblio-translated-${i}" style="font-size:14px;color:#333;font-style:italic;margin-bottom:6px;"></div>
+          ${r.doi ? `<a href="https://doi.org/${r.doi}" target="_blank">DOI: ${r.doi}</a>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function translateCard(i) {
+      const div = document.getElementById('biblio-translated-' + i);
+      const r = currentBiblioResults[i];
+      if (!r || !r.abstract) {
+        div.textContent = 'No hi ha text per traduir.';
+        return;
+      }
+      div.textContent = 'Traduint (pot trigar uns segons, es fa amb el model local)...';
+      try {
+        const resp = await fetch('/api/translate?text=' + encodeURIComponent(r.abstract));
+        const data = await resp.json();
+        div.textContent = data.error ? 'Error en la traduccio.' : data.translated;
+      } catch (e) {
+        div.textContent = 'Error en la traduccio.';
+      }
+    }
+
+    async function searchBiblio() {
+      const q = document.getElementById('biblio-query').value.trim();
+      const resultsDiv = document.getElementById('biblio-results');
+      if (!q) return;
+      resultsDiv.innerHTML = '<p>Cercant a la base verificada...</p>';
+      try {
+        const resp = await fetch('/api/bibliography-search?query=' + encodeURIComponent(q) + '&limit=5');
+        const data = await resp.json();
+        renderBiblioResults(data.results, resultsDiv, false);
+      } catch (e) {
+        resultsDiv.innerHTML = '<p>Error consultant la bibliografia.</p>';
+      }
+    }
+
+    async function searchBiblioLive() {
+      const q = document.getElementById('biblio-query').value.trim();
+      const resultsDiv = document.getElementById('biblio-results');
+      if (!q) return;
+      resultsDiv.innerHTML = '<p>Cercant en viu a PubMed (pot trigar unes segons)...</p>';
+      try {
+        const resp = await fetch('/api/bibliography-search-live?query=' + encodeURIComponent(q) + '&limit=5');
+        const data = await resp.json();
+        renderBiblioResults(data.results, resultsDiv, true);
+      } catch (e) {
+        resultsDiv.innerHTML = '<p>Error consultant PubMed en viu.</p>';
+      }
+    }
+  </script>
 </body>
 </html>
 """
     return html.replace("{CHAT_MODEL_PLACEHOLDER}", CHAT_MODEL)
+
+
+@app.get("/api/panel-status")
+def panel_status():
+    """Comprueba desde el propio servidor (no desde el navegador, para
+    evitar problemas de CORS) si el Panel TBC-IA (puerto 8090) esta
+    conectado. Fail-open: devuelve connected=False si no responde."""
+    import requests
+    try:
+        resp = requests.get("http://127.0.0.1:8090", timeout=1.5)
+        return {"connected": resp.status_code == 200}
+    except requests.RequestException:
+        return {"connected": False}
+
+
+@app.get("/api/bibliography-search")
+def bibliography_search(query: str, limit: int = 5):
+    """Busca en la bibliografia verificada (tbc_master.db) directamente,
+    sin pasar por el puerto 8002 (reutiliza query_master_bibliography, ya
+    usada en /api/chat). Fail-open: devuelve lista vacia si falla."""
+    try:
+        results = query_master_bibliography(query, limit=limit)
+    except Exception:
+        results = []
+    results = [r for r in results if r.get("retraction_status") == "ninguna"]
+    return {"query": query, "results": results}
+
+
+@app.get("/api/bibliography-search-live")
+def bibliography_search_live(query: str, limit: int = 5):
+    """Busca en vivo directamente en PubMed, SIN verificacion de PubTator3
+    ni validacion de CrossRef ni deteccion de retracciones (a diferencia
+    de /api/bibliography-search). Util cuando la base local no tiene
+    resultados para una consulta concreta. Fail-open: lista vacia si falla."""
+    try:
+        results = search_pubmed_live(query, max_results=limit)
+    except Exception:
+        results = []
+    return {"query": query, "results": results}
+
+
+@app.get("/api/translate")
+def translate_text(text: str):
+    """Traduce un texto (resumen de un articulo) al castellano usando
+    Ollama (100% local, sin servicios externos de traduccion). Fail-open:
+    devuelve error=True si falla."""
+    system_prompt = (
+        "Traduce el siguiente texto cientifico-medico (resumen de un articulo "
+        "sobre tuberculosis) al castellano. Manten la terminologia clinica "
+        "precisa. Responde EXCLUSIVAMENTE con la traduccion, sin comentarios "
+        "ni explicaciones adicionales."
+    )
+    try:
+        translated = generate_response(system_prompt, text)
+        return {"translated": translated, "error": False}
+    except Exception:
+        return {"translated": None, "error": True}
 
 
 app.mount("/guides", StaticFiles(directory=GUIDES_DIR, html=True), name="guides")

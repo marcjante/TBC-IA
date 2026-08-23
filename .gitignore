@@ -48,3 +48,6 @@ Copias de seguridad TBC/
 
 # Banco de datos harvesteado del motor complementario (se regenera)
 tbc-ia-sota-engine/data/
+
+# Entorno virtual del panel de estado
+dashboard/venv/
