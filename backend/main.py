@@ -416,8 +416,11 @@ def expand_query(original_query, timeout=15):
     consulta original sin cambios si falla, si la respuesta esta vacia,
     o si es sospechosamente larga (señal de que el modelo no siguio el
     formato pedido)."""
+    import time
+    _t0 = time.time()
     try:
         raw = generate_response(QUERY_EXPANSION_SYSTEM_PROMPT, original_query)
+        print(f"[TIMING] expand_query: {time.time() - _t0:.1f}s")
         terminos = raw.strip()
         if not terminos or len(terminos) > 300:
             return original_query
@@ -432,8 +435,11 @@ def classify_intent(message, timeout=15):
     Fail-open: si falla, devuelve "consulta_clinica" (el comportamiento
     normal de siempre, sin regresion respecto a como funcionaba antes de
     añadir este clasificador)."""
+    import time
+    _t0 = time.time()
     try:
         raw = generate_response(INTENT_CLASSIFIER_SYSTEM_PROMPT, message)
+        print(f"[TIMING] classify_intent: {time.time() - _t0:.1f}s")
         parsed = parse_comparator_response(raw)
         if parsed and parsed.get("intencion") in ("urgencia_medica", "riesgo_autolesion"):
             return parsed["intencion"]
@@ -528,7 +534,10 @@ def chat(request: ChatRequest):
 
     retrieval_query = build_retrieval_query(request.message, request.history)
     retrieval_query = expand_query(retrieval_query)
+    import time
+    _t_retrieve = time.time()
     fragments, metadatas, distances = hybrid_retrieve(retrieval_query, request.top_k)
+    print(f"[TIMING] hybrid_retrieve: {time.time() - _t_retrieve:.1f}s")
     has_keyword = is_tb_related(request.message)
 
     fallback_used = False
@@ -596,7 +605,10 @@ def chat(request: ChatRequest):
     history_block = build_history_block(request.history)
     user_prompt = history_block + "CONTEXTO:\n" + context_text + "\n\nPREGUNTA DEL USUARIO:\n" + request.message
 
+    import time
+    _t_gen = time.time()
     final_response = generate_response(SYSTEM_PROMPT, user_prompt)
+    print(f"[TIMING] generate_response (respuesta principal): {time.time() - _t_gen:.1f}s")
 
     CANNED_NO_INFO = "No encuentro esta informacion en los documentos disponibles."
 
@@ -659,10 +671,13 @@ def chat(request: ChatRequest):
     # agosto de 2026, corregido aqui.
     llm_unsupported_claims = None
     if sources_used:
+        import time
+        _t_verify = time.time()
         llm_unsupported_claims = verify_claims_with_llm(
             [s["text"] for s in sources_used],
             final_response,
         )
+        print(f"[TIMING] verify_claims_with_llm: {time.time() - _t_verify:.1f}s")
         if llm_unsupported_claims is not None:
             result.setdefault("debug_info", {})["llm_unsupported_claims"] = llm_unsupported_claims
 
@@ -673,9 +688,14 @@ def chat(request: ChatRequest):
     # propuesta de arquitectura TBC-AI v2, agosto 2026).
     riesgo_o_duda = bool(llm_unsupported_claims) or result.get("coverage") in ("baja", "complementaria")
     if riesgo_o_duda and sources_used:
+        import time
+        _t_mistral = time.time()
         response_b = query_llamafile_response(context_text, request.message)
+        print(f"[TIMING] query_llamafile_response: {time.time() - _t_mistral:.1f}s")
         if response_b is not None:
+            _t_compare = time.time()
             dual_model_comparison = compare_with_llamafile(final_response, response_b)
+            print(f"[TIMING] compare_with_llamafile: {time.time() - _t_compare:.1f}s")
             if dual_model_comparison is not None:
                 result.setdefault("debug_info", {})["dual_model_comparison"] = {
                     "response_b": response_b,
