@@ -28,7 +28,7 @@ import fitz
 from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, PROJECT_ROOT, collection
 from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal, detect_no_info_statement
 from backend.prompts import SYSTEM_PROMPT, PATIENT_SYSTEM_PROMPT
-from backend.languages import resolve_lang_name, resolve_canned_no_info
+from backend.languages import resolve_lang_name, resolve_canned_no_info, resolve_canned_urgencia
 from backend.rag import retrieve, is_relevant, index_single_pdf, query_sota_fallback, verify_groundedness, query_llamafile_response, query_master_bibliography, search_pubmed_live, get_drug_safety_info, hybrid_retrieve
 from backend.llm import generate_response
 
@@ -401,10 +401,12 @@ CANNED_RIESGO_AUTOLESION = (
 
 QUERY_EXPANSION_SYSTEM_PROMPT = """Eres un asistente que amplia consultas de busqueda para un sistema de recuperacion de informacion medica sobre tuberculosis. Dada una pregunta de un paciente o profesional, genera de 3 a 5 terminos o frases medicas relacionadas (sinonimos, nombres alternativos, terminologia clinica formal) que ayuden a encontrar documentos relevantes, aunque la persona no use esas palabras exactas.
 
+IMPORTANTE: gran parte de las guias clinicas de referencia (OMS, CDC, ECDC) estan escritas en ingles. Si la pregunta esta en español y trata un tema clinico que probablemente este documentado en esas guias (tratamiento, farmacos, dosis, efectos adversos, duracion), incluye TAMBIEN 1-2 terminos clinicos equivalentes en ingles (ej. "6-month regimen", "rifampicin", "adverse reactions") ademas de los terminos en español, para poder encontrar el texto original si la busqueda por palabras exactas lo necesita.
+
 Responde EXCLUSIVAMENTE con los terminos adicionales separados por comas, sin explicaciones ni frases completas. Ejemplo:
 
-Pregunta: "me duele mucho la barriga"
-Respuesta: dolor abdominal, molestias gastrointestinales, dolor epigastrico
+Pregunta: "cuanto dura el tratamiento de tuberculosis"
+Respuesta: duracion del tratamiento, pauta terapeutica, 6-month regimen, treatment duration
 
 No repitas palabras que ya aparecen en la pregunta original. No inventes sintomas ni farmacos que no esten relacionados con la pregunta."""
 
@@ -601,7 +603,15 @@ def chat(request: ChatRequest):
             "pmid": bib.get("pmid"),
         })
 
-    context_text = "\n\n---\n\n".join(context_parts)
+    # Limitar el numero de fuentes que ve el GENERADOR principal (no afecta
+    # a sources_used, que sigue completo para citar al usuario). Hallazgo
+    # del 23 de agosto de 2026 con cronometraje real: generate_response()
+    # tardaba 131.5s con 10 fuentes en el contexto — con diferencia el paso
+    # mas caro de /api/chat. Las fuentes ya vienen ordenadas por relevancia
+    # (RRF de hybrid_retrieve + bibliografia), asi que recortar la "cola"
+    # pierde poca informacion util a cambio de una reduccion real de tiempo.
+    MAX_SOURCES_FOR_GENERATION = 7
+    context_text = "\n\n---\n\n".join(context_parts[:MAX_SOURCES_FOR_GENERATION])
     history_block = build_history_block(request.history)
     user_prompt = history_block + "CONTEXTO:\n" + context_text + "\n\nPREGUNTA DEL USUARIO:\n" + request.message
 
@@ -818,6 +828,15 @@ def get_document(category: str, filename: str, page: int = 1, highlight: str = "
 def patient_chat(request: PatientChatRequest):
     lang_name = resolve_lang_name(request.lang)
     canned_no_info = resolve_canned_no_info(request.lang)
+
+    # Router de seguridad determinista (mismo que /api/chat, sin
+    # duplicar las reglas): reconoce patrones de riesgo YA CONOCIDOS
+    # por palabras clave, de forma instantanea, sin depender de que
+    # ningun modelo responda. Se ejecuta antes que cualquier otra cosa.
+    red_flag = check_deterministic_red_flags(request.message)
+    if red_flag:
+        log_usage_pattern("/api/patient-chat", f"red_flag_{red_flag}", lang=request.lang)
+        return {"response": resolve_canned_urgencia(request.lang)}
 
     retrieval_query = build_retrieval_query(request.message, request.history)
     fragments, metadatas, distances = retrieve(retrieval_query, 8)

@@ -26,9 +26,21 @@ CANNED_NO_INFO_BY_LANG = {
 }
 
 
+CANNED_URGENCIA_BY_LANG = {
+    "es": "Lo que describes puede ser una urgencia medica. Por favor, contacta ahora mismo con los servicios de emergencia (112 en España) o acude al servicio de urgencias mas cercano. Si estas en tratamiento por tuberculosis, informa tambien a tu equipo de tratamiento en cuanto puedas. Este chat no sustituye la atencion medica urgente.",
+    "ca": "El que descrius pot ser una urgencia medica. Si us plau, contacta ara mateix amb els serveis d'emergencia (112 a Espanya) o vés al servei d'urgencies mes proper. Si estas en tractament per tuberculosi, informa tambe al teu equip de tractament tan aviat com puguis. Aquest xat no substitueix l'atencio medica urgent.",
+    "ar": "ما تصفه قد يكون حالة طبية طارئة. يرجى الاتصال الآن بخدمات الطوارئ (112 في إسبانيا) أو التوجه إلى أقرب قسم للطوارئ. إذا كنت تحت علاج السل، أخبر أيضا فريق العلاج الخاص بك في أقرب وقت ممكن. هذه المحادثة لا تغني عن الرعاية الطبية العاجلة.",
+    "ur": "جو آپ بیان کر رہے ہیں وہ طبی ہنگامی صورتحال ہو سکتی ہے۔ براہ مہربانی ابھی ہنگامی خدمات (سپین میں 112) سے رابطہ کریں یا قریب ترین ایمرجنسی سے رجوع کریں۔ اگر آپ تپ دق کے علاج میں ہیں تو جلد از جلد اپنی علاج ٹیم کو بھی بتائیں۔ یہ چیٹ فوری طبی امداد کا متبادل نہیں ہے۔",
+}
+
+
 def resolve_lang_name(lang_code):
     return LANG_NAMES.get(lang_code, "castellano")
 
 
 def resolve_canned_no_info(lang_code):
     return CANNED_NO_INFO_BY_LANG.get(lang_code, CANNED_NO_INFO_BY_LANG["es"])
+
+
+def resolve_canned_urgencia(lang_code):
+    return CANNED_URGENCIA_BY_LANG.get(lang_code, CANNED_URGENCIA_BY_LANG["es"])

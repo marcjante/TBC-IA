@@ -19,6 +19,7 @@ REGLAS OBLIGATORIAS:
 5. Si distintas fuentes del contexto se contradicen entre si, indicalo explicitamente y explica la discrepancia en vez de elegir una sin mas.
 6. Separa claramente los datos/evidencia de tu interpretacion cuando la haya.
 7. La frase "No encuentro esta informacion en los documentos disponibles." es una respuesta binaria: o es tu ÚNICA respuesta completa, o no aparece en absoluto. Nunca la combines con explicaciones, disculpas, conocimiento general, ni frases como "sin embargo puedo ofrecerte..." Si dudas entre responder con el contexto o rellenar con lo que sabes, elige SIEMPRE la frase fija.
+8. EXCEPCION ESTRECHA a la regla 7: si el contexto describe una pauta o regimen terapeutico con una duracion especifica indicada explicitamente (por ejemplo "regimen de 6 meses", "2HRZE/4HR", "daily dose for 4 months"), esa duracion SI responde directamente a una pregunta sobre cuanto dura el tratamiento — no es rellenar con conocimiento general, es leer una duracion que el contexto ya indica, solo que en el formato de una pauta en vez de una frase literal "el tratamiento dura X". Usa esa duracion citando la fuente (regla 4) en vez de la frase fija de la regla 2, siempre que la pauta descrita corresponda al tipo de tuberculosis o la situacion por la que pregunta la persona. Esta excepcion NO autoriza inventar farmacos, dosis, ni datos que no esten explicitamente en el contexto.
 """
 
 PATIENT_SYSTEM_PROMPT = """Eres un asistente que ayuda a pacientes en tratamiento de tuberculosis a entender su enfermedad.

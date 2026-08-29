@@ -175,13 +175,22 @@ def hybrid_retrieve(query_text, top_k):
         bm25_ranked_ids = []
         bm25_lookup = {}
 
-    # --- Fusion RRF por id ---
+    # --- Fusion RRF por id, con la busqueda semantica pesando mas ---
+    # Hallazgo del 23 de agosto de 2026: con peso igual, documentos de
+    # vigilancia epidemiologica (que repiten mucho "tratamiento" y
+    # "meses" en un sentido distinto: plazos de notificacion, no
+    # duracion clinica) desplazaban a la guia clinica correcta de la
+    # OMS. BM25_WEIGHT=0.5 deja que BM25 siga aportando fuentes que la
+    # busqueda semantica por si sola no encontraria (ver caso etambutol
+    # de esta noche), pero sin que pueda por si solo tapar un resultado
+    # semantico fuerte.
     k_rrf = 60
+    BM25_WEIGHT = 0.5
     rrf_scores = {}
     for rank, doc_id in enumerate(dense_ids):
         rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + 1.0 / (k_rrf + rank + 1)
     for rank, doc_id in enumerate(bm25_ranked_ids):
-        rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + 1.0 / (k_rrf + rank + 1)
+        rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + BM25_WEIGHT / (k_rrf + rank + 1)
 
     fused_ids = [doc_id for doc_id, _ in sorted(rrf_scores.items(), key=lambda x: -x[1])][:top_k]
 
@@ -196,7 +205,11 @@ def hybrid_retrieve(query_text, top_k):
             doc, meta, dist = dense_lookup[doc_id]
         elif doc_id in bm25_lookup:
             doc, meta = bm25_lookup[doc_id]
-            dist = STRICT_DISTANCE_THRESHOLD
+            # Valor centinela deliberadamente MALO (no el umbral estricto):
+            # una fuente encontrada solo por BM25 (palabras exactas) no
+            # tiene garantia de relacion semantica real, asi que no debe
+            # poder "pasar" el filtro de relevancia por si sola.
+            dist = 999999
         else:
             continue
         fragments.append(doc)
@@ -209,12 +222,21 @@ def hybrid_retrieve(query_text, top_k):
 def is_relevant(fragments, distances, has_keyword):
     """Aplica el filtro de doble umbral: si la pregunta contiene una palabra
     clave relacionada con tuberculosis, se usa el umbral permisivo (750);
-    si no, el estricto (480). Devuelve False si no hay fragmentos o si la
-    distancia del mejor resultado supera el umbral aplicable."""
+    si no, el estricto (480). Devuelve False si no hay fragmentos o si
+    NINGUNA fuente devuelta tiene una distancia dentro del umbral
+    aplicable.
+
+    Se comprueba la MEJOR distancia de toda la lista (min), no solo la
+    primera posicion: con retrieval hibrido (RRF) el orden prioriza una
+    mezcla de señales de BM25 y densidad semantica, asi que la fuente
+    con mejor confianza semantica real no siempre va primera. Corregido
+    el 23 de agosto de 2026 tras detectar que solo mirar distances[0]
+    podia dar un "no relevante" incorrecto cuando la mejor fuente real
+    quedaba en segunda posicion o mas abajo."""
     if not fragments or not distances:
         return False
     threshold = LOOSE_DISTANCE_THRESHOLD if has_keyword else STRICT_DISTANCE_THRESHOLD
-    return distances[0] <= threshold
+    return min(distances) <= threshold
 
 
 def query_sota_fallback(query_text, timeout=8):
@@ -536,6 +558,21 @@ def cima_get_ficha_tecnica_section(nregistro, seccion, timeout=10):
                 if isinstance(data, list) and data:
                     return data[0].get("contenido")
             except (ValueError, KeyError, IndexError, AttributeError):
+                pass
+
+        # Objeto de error de CIMA cuando el medicamento no tiene esta
+        # seccion, ej. {"error":"No existen secciones para el
+        # medicamento indicado"}. Empieza por "{", no por "[", asi que
+        # no entraba en la comprobacion de arriba y se colaba como si
+        # fuera texto real (hallazgo del 23 de agosto de 2026). Se trata
+        # igual que "sin contenido", cumpliendo el fail-open ya
+        # documentado en esta funcion.
+        if text.startswith("{"):
+            try:
+                data = json_module.loads(text, strict=False)
+                if isinstance(data, dict) and "error" in data:
+                    return None
+            except (ValueError, AttributeError):
                 pass
 
         # Formato texto plano directo

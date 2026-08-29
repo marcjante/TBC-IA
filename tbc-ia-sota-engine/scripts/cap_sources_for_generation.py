@@ -15,16 +15,39 @@ cambio de una reduccion real y medible de tiempo. La lista de fuentes
 citadas al usuario NO se recorta, solo lo que efectivamente procesa el
 modelo para redactar la respuesta.
 
+IMPORTANTE: el ancla usa el bloque de la bibliografia justo antes de
+context_text, para que coincida SOLO con /api/chat y no con
+/api/patient-chat (que tiene una construccion de contexto distinta y
+mas simple, y no debe tocarse).
+
 Uso:
     python3 cap_sources_for_generation.py "/ruta/a/backend/main.py"
 """
 
 import sys
 
-OLD = '''    context_text = "\\n\\n---\\n\\n".join(context_parts)
+OLD = '''        sources_used.append({
+            "source": f"PubMed/Europe PMC - {cite}",
+            "category": "bibliografia_cientifica",
+            "page": None,
+            "text": bib.get("abstract") or bib.get("title", ""),
+            "doi": bib.get("doi"),
+            "pmid": bib.get("pmid"),
+        })
+
+    context_text = "\\n\\n---\\n\\n".join(context_parts)
     history_block = build_history_block(request.history)'''
 
-NEW = '''    # Limitar el numero de fuentes que ve el GENERADOR principal (no afecta
+NEW = '''        sources_used.append({
+            "source": f"PubMed/Europe PMC - {cite}",
+            "category": "bibliografia_cientifica",
+            "page": None,
+            "text": bib.get("abstract") or bib.get("title", ""),
+            "doi": bib.get("doi"),
+            "pmid": bib.get("pmid"),
+        })
+
+    # Limitar el numero de fuentes que ve el GENERADOR principal (no afecta
     # a sources_used, que sigue completo para citar al usuario). Hallazgo
     # del 23 de agosto de 2026 con cronometraje real: generate_response()
     # tardaba 131.5s con 10 fuentes en el contexto — con diferencia el paso
