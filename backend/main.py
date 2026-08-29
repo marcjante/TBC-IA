@@ -851,6 +851,7 @@ def patient_chat(request: PatientChatRequest):
         return {"response": resolve_canned_riesgo_autolesion(request.lang)}
 
     retrieval_query = build_retrieval_query(request.message, request.history)
+    retrieval_query = expand_query(retrieval_query)
     fragments, metadatas, distances = hybrid_retrieve(retrieval_query, 8)
 
     # La lista TB_KEYWORDS solo cubre espanol: en arabe/urdu nunca habria
