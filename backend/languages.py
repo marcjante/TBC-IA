@@ -44,3 +44,15 @@ def resolve_canned_no_info(lang_code):
 
 def resolve_canned_urgencia(lang_code):
     return CANNED_URGENCIA_BY_LANG.get(lang_code, CANNED_URGENCIA_BY_LANG["es"])
+
+
+CANNED_RIESGO_AUTOLESION_BY_LANG = {
+    "es": "Lamento que estes pasando por un momento tan dificil. Por favor, no te quedes solo con esto: puedes llamar al 024 (linea de atencion a la conducta suicida, gratuita, disponible las 24 horas en España) o al 112 si hay riesgo inmediato. Tambien puedes contactar con tu equipo de tratamiento o con alguien de confianza ahora mismo. Este chat no sustituye la ayuda profesional que necesitas.",
+    "ca": "Sento molt que estiguis passant per un moment tan dificil. Si us plau, no et quedis sol amb aixo: pots trucar al 024 (linia d'atencio a la conducta suicida, gratuita, disponible les 24 hores a Espanya) o al 112 si hi ha risc immediat. Tambe pots contactar amb el teu equip de tractament o amb algu de confiança ara mateix. Aquest xat no substitueix l'ajuda professional que necessites.",
+    "ar": "يؤسفني أنك تمر بلحظة صعبة كهذه. من فضلك لا تبق وحيدا مع هذا: يمكنك الاتصال بالرقم 024 (خط الدعم النفسي للسلوك الانتحاري، مجاني، متاح على مدار 24 ساعة في إسبانيا) أو 112 إذا كان هناك خطر فوري. يمكنك أيضا التواصل مع فريق العلاج الخاص بك أو مع شخص تثق به الآن. هذه المحادثة لا تغني عن المساعدة المهنية التي تحتاجها.",
+    "ur": "مجھے افسوس ہے کہ آپ اس مشکل وقت سے گزر رہے ہیں۔ براہ مہربانی اکیلے مت رہیں: آپ 024 پر کال کر سکتے ہیں (خودکشی کے رجحان کی مدد کی لائن، مفت، سپین میں 24 گھنٹے دستیاب) یا فوری خطرہ ہونے کی صورت میں 112 پر۔ آپ اپنی علاج ٹیم یا کسی قابل اعتماد شخص سے بھی ابھی رابطہ کر سکتے ہیں۔ یہ چیٹ اس پیشہ ورانہ مدد کا متبادل نہیں ہے جس کی آپ کو ضرورت ہے۔",
+}
+
+
+def resolve_canned_riesgo_autolesion(lang_code):
+    return CANNED_RIESGO_AUTOLESION_BY_LANG.get(lang_code, CANNED_RIESGO_AUTOLESION_BY_LANG["es"])

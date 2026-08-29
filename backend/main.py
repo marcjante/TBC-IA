@@ -28,7 +28,7 @@ import fitz
 from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, PROJECT_ROOT, collection
 from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal, detect_no_info_statement
 from backend.prompts import SYSTEM_PROMPT, PATIENT_SYSTEM_PROMPT
-from backend.languages import resolve_lang_name, resolve_canned_no_info, resolve_canned_urgencia
+from backend.languages import resolve_lang_name, resolve_canned_no_info, resolve_canned_urgencia, resolve_canned_riesgo_autolesion
 from backend.rag import retrieve, is_relevant, index_single_pdf, query_sota_fallback, verify_groundedness, query_llamafile_response, query_master_bibliography, search_pubmed_live, get_drug_safety_info, hybrid_retrieve
 from backend.llm import generate_response
 
@@ -837,6 +837,18 @@ def patient_chat(request: PatientChatRequest):
     if red_flag:
         log_usage_pattern("/api/patient-chat", f"red_flag_{red_flag}", lang=request.lang)
         return {"response": resolve_canned_urgencia(request.lang)}
+
+    # Clasificador de intencion por LLM (mismo que /api/chat): cubre
+    # casos que las reglas fijas de la pieza 1 no reconocen por palabras
+    # clave concretas, y ademas detecta riesgo de autolesion, con
+    # recursos de crisis reales en el idioma del paciente.
+    intencion = classify_intent(request.message)
+    if intencion == "urgencia_medica":
+        log_usage_pattern("/api/patient-chat", "urgencia_medica_general", lang=request.lang)
+        return {"response": resolve_canned_urgencia(request.lang)}
+    if intencion == "riesgo_autolesion":
+        log_usage_pattern("/api/patient-chat", "riesgo_autolesion", lang=request.lang)
+        return {"response": resolve_canned_riesgo_autolesion(request.lang)}
 
     retrieval_query = build_retrieval_query(request.message, request.history)
     fragments, metadatas, distances = retrieve(retrieval_query, 8)
