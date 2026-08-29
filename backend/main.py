@@ -851,7 +851,7 @@ def patient_chat(request: PatientChatRequest):
         return {"response": resolve_canned_riesgo_autolesion(request.lang)}
 
     retrieval_query = build_retrieval_query(request.message, request.history)
-    fragments, metadatas, distances = retrieve(retrieval_query, 8)
+    fragments, metadatas, distances = hybrid_retrieve(retrieval_query, 8)
 
     # La lista TB_KEYWORDS solo cubre espanol: en arabe/urdu nunca habria
     # coincidencia, lo que forzaria siempre el umbral estricto (480) aunque
@@ -877,7 +877,20 @@ def patient_chat(request: PatientChatRequest):
             log_usage_pattern("/api/patient-chat", "sin_cobertura", lang=request.lang)
             return {"response": canned_no_info}
 
-    context_parts = [frag for frag in fragments]
+    # Priorizar fuentes clinicas (OMS, CDC) sobre vigilancia
+    # epidemiologica, mismo criterio que /api/chat (hallazgo del 23 de
+    # agosto de 2026: documentos de vigilancia usan "tratamiento" y
+    # "meses" en un sentido distinto al clinico y pueden diluir la
+    # señal correcta).
+    CLINICAL_CATEGORIES_PATIENT = {"01_WHO", "02_CDC", "05_ClinicalKB_JSON"}
+    paired = list(zip(fragments, metadatas))
+    paired.sort(key=lambda par: 0 if par[1].get("category") in CLINICAL_CATEGORIES_PATIENT else 1)
+    fragments = [par[0] for par in paired]
+    metadatas = [par[1] for par in paired]
+
+    # Limitar cuantas fuentes ve el generador (mismo margen que /api/chat).
+    MAX_SOURCES_FOR_GENERATION_PATIENT = 7
+    context_parts = [frag for frag in fragments[:MAX_SOURCES_FOR_GENERATION_PATIENT]]
     context_text = "\n\n---\n\n".join(context_parts)
     history_block = build_history_block(request.history)
 
