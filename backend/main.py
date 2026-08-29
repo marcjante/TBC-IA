@@ -919,34 +919,10 @@ def patient_chat(request: PatientChatRequest):
     final_response = re.sub(r"\S+\.pdf", "", final_response, flags=re.IGNORECASE)
     final_response = re.sub(r"\s{2,}", " ", final_response).strip()
 
-    result = {"response": final_response}
-    if request.debug:
-        result["debug_info"] = {
-            "model": CHAT_MODEL,
-            "top_k": 8,
-            "top1_distance": distances[0] if distances else None,
-            "has_keyword": has_keyword,
-            "fallback_used": fallback_used,
-        }
-
-        if fragments:
-            llm_unsupported_claims = verify_claims_with_llm(fragments, final_response)
-            if llm_unsupported_claims is not None:
-                result["debug_info"]["llm_unsupported_claims"] = llm_unsupported_claims
-
-            response_b = query_llamafile_response(context_text, request.message)
-            if response_b is not None:
-                dual_model_comparison = compare_with_llamafile(final_response, response_b)
-                if dual_model_comparison is not None:
-                    result["debug_info"]["dual_model_comparison"] = {
-                        "response_b": response_b,
-                        **dual_model_comparison,
-                    }
-
-    # Cobertura interna, solo para el registro de patrones de uso (no se
-    # muestra al paciente, igual que las fuentes: aqui usamos los mismos
-    # umbrales que en /api/chat para mantener las estadisticas comparables
-    # entre ambos endpoints).
+    # Cobertura interna (se calcula AHORA, antes de la verificacion, para
+    # poder usarla como señal de riesgo — igual que "coverage" en
+    # /api/chat). Sigue sin mostrarse al paciente, solo para el registro
+    # de patrones de uso y para decidir si activar Mistral.
     if fallback_used:
         internal_coverage = "complementaria"
     elif distances:
@@ -959,6 +935,41 @@ def patient_chat(request: PatientChatRequest):
             internal_coverage = "baja"
     else:
         internal_coverage = None
+
+    result = {"response": final_response}
+    if request.debug:
+        result["debug_info"] = {
+            "model": CHAT_MODEL,
+            "top_k": 8,
+            "top1_distance": distances[0] if distances else None,
+            "has_keyword": has_keyword,
+            "fallback_used": fallback_used,
+        }
+
+    # Verificacion de afirmaciones: SIEMPRE se ejecuta si hay fuentes, no
+    # solo en modo debug (mismo hallazgo que en /api/chat: antes las
+    # consultas reales de pacientes nunca se beneficiaban de esta
+    # comprobacion de seguridad).
+    llm_unsupported_claims = None
+    if fragments:
+        llm_unsupported_claims = verify_claims_with_llm(fragments, final_response)
+        if llm_unsupported_claims is not None:
+            result.setdefault("debug_info", {})["llm_unsupported_claims"] = llm_unsupported_claims
+
+    # Mistral (critico selectivo): solo si hay señal de riesgo real
+    # (afirmaciones sin respaldo, o cobertura baja/complementaria) — no
+    # en cada pregunta. Mismo criterio que /api/chat.
+    riesgo_o_duda = bool(llm_unsupported_claims) or internal_coverage in ("baja", "complementaria")
+    if riesgo_o_duda and fragments:
+        response_b = query_llamafile_response(context_text, request.message)
+        if response_b is not None:
+            dual_model_comparison = compare_with_llamafile(final_response, response_b)
+            if dual_model_comparison is not None:
+                result.setdefault("debug_info", {})["dual_model_comparison"] = {
+                    "response_b": response_b,
+                    **dual_model_comparison,
+                }
+
     log_usage_pattern("/api/patient-chat", internal_coverage, lang=request.lang)
 
     return result
