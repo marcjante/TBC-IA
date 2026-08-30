@@ -1,0 +1,15 @@
+/Users/marcjantecastellvi/Desktop/TBC IA/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Banco total: 560 preguntas
+Ya evaluadas (retomando): 0
+Pendientes: 560
+Guardando resultados en: evaluation_results_560.jsonl
+Empezando a las 08:06:43
+
+[1/560] id=1 (farmaco_especifico) -> error (400.0s)
+[2/560] id=2 (farmaco_especifico) -> error (400.0s)
+[3/560] id=3 (farmaco_especifico) -> error (400.0s)
+[4/560] id=4 (farmaco_especifico) -> error (400.0s)
+[5/560] id=5 (farmaco_especifico) -> error (400.0s)
+[6/560] id=6 (farmaco_especifico) -> error (400.0s)
+[7/560] id=7 (farmaco_especifico) -> error (400.0s)

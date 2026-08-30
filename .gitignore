@@ -51,3 +51,4 @@ tbc-ia-sota-engine/data/
 
 # Entorno virtual del panel de estado
 dashboard/venv/
+archivo_historico_scripts/
