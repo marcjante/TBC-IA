@@ -28,7 +28,7 @@ import fitz
 from backend.config import CHAT_MODEL, DOCUMENTS_DIR, GUIDES_DIR, PATIENT_DIR, PROJECT_ROOT, collection
 from backend.safety import is_tb_related, detect_generic_knowledge_leak, detect_model_refusal, detect_no_info_statement
 from backend.prompts import SYSTEM_PROMPT, PATIENT_SYSTEM_PROMPT
-from backend.languages import resolve_lang_name, resolve_canned_no_info, resolve_canned_urgencia, resolve_canned_riesgo_autolesion
+from backend.languages import resolve_lang_name, resolve_canned_no_info, resolve_canned_urgencia, resolve_canned_riesgo_autolesion, resolve_nota_riesgo
 from backend.rag import retrieve, is_relevant, index_single_pdf, query_sota_fallback, verify_groundedness, query_llamafile_response, query_master_bibliography, search_pubmed_live, get_drug_safety_info, hybrid_retrieve
 from backend.llm import generate_response
 
@@ -697,6 +697,18 @@ def chat(request: ChatRequest):
     # en modo debug, sin ningun criterio de riesgo (Fase 6 de la
     # propuesta de arquitectura TBC-AI v2, agosto 2026).
     riesgo_o_duda = bool(llm_unsupported_claims) or result.get("coverage") in ("baja", "complementaria")
+
+    # Aviso explicito en la respuesta real cuando hay riesgo o duda (no
+    # solo en debug_info, que antes de hoy era lo unico que cambiaba).
+    # No se bloquea ni se regenera la respuesta (costaria una llamada
+    # extra a Ollama); se añade un aviso honesto sobre la incertidumbre.
+    if riesgo_o_duda:
+        result["response"] = result["response"] + (
+            "\n\nNota: parte de esta información no se ha podido verificar "
+            "directamente contra las fuentes documentales. Coméntalo con tu "
+            "equipo médico antes de actuar según esto."
+        )
+
     if riesgo_o_duda and sources_used:
         import time
         _t_mistral = time.time()
@@ -961,6 +973,12 @@ def patient_chat(request: PatientChatRequest):
     # (afirmaciones sin respaldo, o cobertura baja/complementaria) — no
     # en cada pregunta. Mismo criterio que /api/chat.
     riesgo_o_duda = bool(llm_unsupported_claims) or internal_coverage in ("baja", "complementaria")
+
+    # Aviso explicito en la respuesta real cuando hay riesgo o duda,
+    # en el idioma del paciente (mismo criterio que /api/chat).
+    if riesgo_o_duda:
+        result["response"] = result["response"] + "\n\n" + resolve_nota_riesgo(request.lang)
+
     if riesgo_o_duda and fragments:
         response_b = query_llamafile_response(context_text, request.message)
         if response_b is not None:

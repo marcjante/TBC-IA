@@ -56,3 +56,15 @@ CANNED_RIESGO_AUTOLESION_BY_LANG = {
 
 def resolve_canned_riesgo_autolesion(lang_code):
     return CANNED_RIESGO_AUTOLESION_BY_LANG.get(lang_code, CANNED_RIESGO_AUTOLESION_BY_LANG["es"])
+
+
+NOTA_RIESGO_BY_LANG = {
+    "es": "Nota: parte de esta información no se ha podido confirmar del todo. Coméntalo con tu equipo médico antes de decidir nada.",
+    "ca": "Nota: part d'aquesta informació no s'ha pogut confirmar del tot. Comenta-ho amb el teu equip mèdic abans de decidir res.",
+    "ar": "ملاحظة: لم يتم تأكيد جزء من هذه المعلومات بشكل كامل. تحدث مع فريقك الطبي قبل اتخاذ أي قرار.",
+    "ur": "نوٹ: اس معلومات کا کچھ حصہ مکمل طور پر تصدیق شدہ نہیں ہے۔ کوئی بھی فیصلہ کرنے سے پہلے اپنی طبی ٹیم سے بات کریں۔",
+}
+
+
+def resolve_nota_riesgo(lang_code):
+    return NOTA_RIESGO_BY_LANG.get(lang_code, NOTA_RIESGO_BY_LANG["es"])
