@@ -10,7 +10,7 @@ esto es la misma informacion pero en una pagina web que se puede dejar
 abierta y se actualiza sola cada 5 segundos.
 
 Uso:
-    cd ~/Desktop/"TBC IA"/dashboard
+    cd ~/Desktop/"TBC IA"/tbc-master-database   (o donde prefieras)
     source venv/bin/activate
     pip install fastapi uvicorn requests
     python3 dashboard_service.py
@@ -62,46 +62,24 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel TBC-IA</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F4B4C'/%3E%3Cpath d='M10,50 L35,50 L42,30 L50,70 L58,50 L90,50' stroke='%233E8E89' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #EEF3F0;
-    --surface: #FFFFFF;
-    --ink: #152623;
-    --ink-soft: #4A5B57;
-    --teal: #1F6F72;
-    --teal-dark: #123F42;
-    --coral: #B8433A;
-    --coral-bg: #FBEAE8;
-    --sage: #4F8562;
-    --sage-bg: #E9F2EA;
-    --line: #D7E0DB;
-  }
-  * { box-sizing: border-box; }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: var(--bg);
-    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f1117;
+    color: #e6e6e6;
     margin: 0;
     padding: 40px 20px;
-    -webkit-font-smoothing: antialiased;
   }
   h1 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
     text-align: center;
-    font-size: 28px;
-    margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    font-weight: 600;
+    margin-bottom: 4px;
   }
   .subtitle {
     text-align: center;
-    color: var(--ink-soft);
-    margin-bottom: 24px;
+    color: #9098a8;
+    margin-bottom: 32px;
     font-size: 14px;
   }
   .grid {
@@ -112,15 +90,14 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     margin: 0 auto;
   }
   .card {
-    background: var(--surface);
-    border-radius: 10px;
+    background: #1a1d27;
+    border-radius: 12px;
     padding: 20px;
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--line);
+    border: 1px solid #2a2e3a;
     transition: border-color 0.3s;
   }
-  .card.ok { border-left-color: var(--sage); }
-  .card.down { border-left-color: var(--coral); }
+  .card.ok { border-color: #2e8b57; }
+  .card.down { border-color: #b34545; }
   .card-header {
     display: flex;
     justify-content: space-between;
@@ -129,39 +106,42 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   }
   .name { font-weight: 600; font-size: 16px; }
   .badge {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    padding: 3px 10px;
+    padding: 4px 10px;
     border-radius: 20px;
-    letter-spacing: .03em;
   }
-  .badge.ok { background: var(--sage-bg); color: var(--sage); }
-  .badge.down { background: var(--coral-bg); color: var(--coral); }
-  .desc { color: var(--ink-soft); font-size: 13px; margin-bottom: 8px; }
-  .port { color: var(--ink-soft); font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+  .badge.ok { background: #14351f; color: #4ade80; }
+  .badge.down { background: #3a1414; color: #f87171; }
+  .desc { color: #9098a8; font-size: 13px; margin-bottom: 8px; }
+  .port { color: #6b7280; font-size: 12px; font-family: monospace; margin-bottom: 12px; }
+  .open-btn {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid #4ade80;
+    color: #4ade80;
+    text-decoration: none;
+    font-size: 12px;
+    font-family: monospace;
+  }
+  .open-btn:hover { background: #4ade8022; }
+  .open-btn.disabled {
+    border-color: #4b5563;
+    color: #6b7280;
+    pointer-events: none;
+  }
   .updated {
     text-align: center;
-    color: var(--ink-soft);
+    color: #6b7280;
     font-size: 12px;
     margin-top: 32px;
-  }
-  button:focus-visible, a:focus-visible {
-    outline: 2px solid var(--teal-dark);
-    outline-offset: 2px;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; }
-  }
-  @media (max-width: 480px) {
-    body { padding: 28px 14px; }
   }
 </style>
 </head>
 <body>
   <h1>Panel TBC-IA</h1>
   <div class="subtitle">Estado de los servicios en tiempo real</div>
-
   <div class="grid" id="grid">Cargando...</div>
   <div class="updated" id="updated"></div>
 
@@ -179,6 +159,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             </div>
             <div class="desc">${svc.desc}</div>
             <div class="port">puerto ${svc.port}</div>
+            <a class="open-btn ${svc.status === 'ok' ? '' : 'disabled'}" href="${svc.link}" target="_blank">Abrir →</a>
           </div>
         `).join('');
         document.getElementById('updated').textContent =

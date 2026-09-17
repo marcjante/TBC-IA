@@ -1043,13 +1043,13 @@ def home():
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #F5F1E8;
-    --ink: #1C2420;
-    --ink-soft: #5B6560;
-    --teal: #1F4B4C;
+    --paper: #EEF3F0;
+    --ink: #152623;
+    --ink-soft: #4A5B57;
+    --teal: #1F6F72;
     --teal-bright: #3E8E89;
-    --rust: #A8502E;
-    --line: #DEDACB;
+    --rust: #B8433A;
+    --line: #D7E0DB;
   }
   * { box-sizing: border-box; }
   body {
@@ -1118,7 +1118,7 @@ def home():
   .card {
     flex: 1 1 320px;
     max-width: 380px;
-    background: #FFFEFA;
+    background: #FFFFFF;
     border: 1px solid var(--line);
     border-radius: 4px;
     padding: 30px 28px 26px;
@@ -1129,7 +1129,7 @@ def home():
   }
   .card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 28px rgba(28,36,32,0.09);
+    box-shadow: 0 10px 28px rgba(21,38,35,0.09);
     border-color: var(--teal-bright);
   }
   .tag {
@@ -1141,8 +1141,8 @@ def home():
     border-radius: 3px;
     margin-bottom: 16px;
   }
-  .tag.patient { background: rgba(31,75,76,0.1); color: var(--teal); }
-  .tag.clinic { background: rgba(168,80,46,0.1); color: var(--rust); }
+  .tag.patient { background: rgba(31,111,114,0.1); color: var(--teal); }
+  .tag.clinic { background: rgba(184,67,58,0.1); color: var(--rust); }
   .card h2 {
     font-family: 'Fraunces', serif;
     font-weight: 600;
@@ -1179,6 +1179,35 @@ def home():
   @media (max-width: 480px) {
     body { padding: 44px 18px 32px; }
   }
+  .biblio-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .biblio-input {
+    flex: 1 1 auto;
+    min-width: 180px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    background: #fcfdfc;
+    color: var(--ink);
+  }
+  .biblio-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+  }
+  .biblio-btn-primary { border: none; background: var(--teal); color: white; }
+  .biblio-btn-primary:hover { background: var(--teal-dark); }
+  .biblio-btn-ghost { border: 1px solid var(--teal); background: white; color: var(--teal); }
+  .biblio-btn-ghost:hover { background: rgba(31,111,114,0.08); }
+  @media (max-width: 560px) {
+    .biblio-bar { flex-direction: column; }
+    .biblio-btn { white-space: normal; width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -1207,22 +1236,20 @@ def home():
       <span class="tag clinic">Sistema</span>
       <h2>Panel TBC-IA</h2>
       <p>Estat en temps real dels set serveis (Ollama, motor complementari, Llamafile, n8n, bibliografia...).</p>
-      <div class="status"><span class="dot" id="panel-dot" style="background:#888;"></span><span id="panel-text">Comprovant...</span></div>
+      <div class="status"><span class="dot" id="panel-dot" style="background:#4A5B57;"></span><span id="panel-text">Comprovant...</span></div>
     </a>
   </div>
 
   <div class="biblio-search-section" style="max-width:900px;margin:40px auto;padding:0 20px;">
     <h2 style="margin-bottom:12px;">Cerca a la bibliografia verificada</h2>
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <div class="biblio-bar">
       <input id="biblio-query" type="text" placeholder="p.ex. isoniazid resistance"
-             style="flex:1;padding:10px;border-radius:6px;border:1px solid #ccc;font-size:14px;"
+             class="biblio-input"
              onkeydown="if(event.key==='Enter') searchBiblio()">
-      <button onclick="searchBiblio()"
-              style="padding:10px 20px;border-radius:6px;border:none;background:#1F4B4C;color:white;cursor:pointer;font-size:14px;">
+      <button onclick="searchBiblio()" class="biblio-btn biblio-btn-primary">
         Cercar (base verificada)
       </button>
-      <button onclick="searchBiblioLive()"
-              style="padding:10px 20px;border-radius:6px;border:1px solid #1F4B4C;background:white;color:#1F4B4C;cursor:pointer;font-size:14px;">
+      <button onclick="searchBiblioLive()" class="biblio-btn biblio-btn-ghost">
         Cercar en viu a PubMed
       </button>
     </div>
@@ -1235,10 +1262,10 @@ def home():
       const dot = document.getElementById('panel-dot');
       const text = document.getElementById('panel-text');
       if (d.connected) {
-        dot.style.background = '#4ade80';
+        dot.style.background = '#4F8562';
         text.textContent = 'Panel connectat';
       } else {
-        dot.style.background = '#f87171';
+        dot.style.background = '#B8433A';
         text.textContent = 'Panel no connectat';
       }
     }).catch(() => {
@@ -1250,18 +1277,18 @@ def home():
     function articleCardsHtml(results, live) {
       if (!results || !results.length) return '';
       const badge = live
-        ? '<span style="background:#fef3c7;color:#92400e;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">EN VIU · SENSE VERIFICAR</span>'
-        : '<span style="background:#dcfce7;color:#166534;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">VERIFICAT</span>';
+        ? '<span style="background:#FBF1DE;color:#B4791E;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">EN VIU · SENSE VERIFICAR</span>'
+        : '<span style="background:#E9F2EA;color:#4F8562;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">VERIFICAT</span>';
       return results.map((r, i) => `
-        <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:10px;">
+        <div style="border:1px solid #D7E0DB;border-radius:8px;padding:14px;margin-bottom:10px;">
           <strong>${r.title || ''}</strong>${badge}<br>
-          <span style="color:#666;font-size:13px;">${r.journal || 'revista desconeguda'} (${r.year || 's.f.'}) — PMID: ${r.pmid || '-'}</span>
+          <span style="color:#4A5B57;font-size:13px;">${r.journal || 'revista desconeguda'} (${r.year || 's.f.'}) — PMID: ${r.pmid || '-'}</span>
           <p style="font-size:14px;margin-top:8px;" id="biblio-abstract-${i}">${(r.abstract || '').slice(0, 300)}${(r.abstract || '').length > 300 ? '...' : ''}</p>
           <button onclick="translateCard(${i})"
-                  style="font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid #1F4B4C;background:white;color:#1F4B4C;cursor:pointer;margin-bottom:6px;">
+                  style="font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid #1F6F72;background:white;color:#1F6F72;cursor:pointer;margin-bottom:6px;">
             Traduir al castella
           </button>
-          <div id="biblio-translated-${i}" style="font-size:14px;color:#333;font-style:italic;margin-bottom:6px;"></div>
+          <div id="biblio-translated-${i}" style="font-size:14px;color:#152623;font-style:italic;margin-bottom:6px;"></div>
           ${r.doi ? `<a href="https://doi.org/${r.doi}" target="_blank">DOI: ${r.doi}</a>` : ''}
         </div>
       `).join('');
@@ -1270,10 +1297,10 @@ def home():
     function aempsCardHtml(r) {
       if (!r) return '';
       return `
-        <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:10px;">
+        <div style="border:1px solid #D7E0DB;border-radius:8px;padding:14px;margin-bottom:10px;">
           <strong>${r.nombre || ''}</strong>
-          <span style="background:#dcfce7;color:#166534;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">VERIFICAT · CIMA AEMPS</span>
-          <br><span style="color:#666;font-size:13px;">${r.laboratorio || ''} — nº registre ${r.nregistro || '-'}</span>
+          <span style="background:#E9F2EA;color:#4F8562;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">VERIFICAT · CIMA AEMPS</span>
+          <br><span style="color:#4A5B57;font-size:13px;">${r.laboratorio || ''} — nº registre ${r.nregistro || '-'}</span>
           <p style="font-size:14px;margin-top:8px;"><strong>Contraindicacions:</strong> ${r.contraindicaciones || 'no disponible'}</p>
           <p style="font-size:14px;"><strong>Interaccions:</strong> ${r.interacciones || 'no disponible'}</p>
           <p style="font-size:14px;"><strong>Reaccions adverses:</strong> ${r.reacciones_adversas || 'no disponible'}</p>
@@ -1353,10 +1380,10 @@ def home():
         }
         const r = data.result;
         resultsDiv.innerHTML = `
-          <div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:10px;">
+          <div style="border:1px solid #D7E0DB;border-radius:8px;padding:14px;margin-bottom:10px;">
             <strong>${r.nombre || ''}</strong>
-            <span style="background:#e0e7ff;color:#3730a3;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">CIMA · FITXA OFICIAL AEMPS</span>
-            <br><span style="color:#666;font-size:13px;">${r.laboratorio || ''} — nº registre ${r.nregistro || '-'}</span>
+            <span style="background:#E4F1F1;color:#123F42;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">CIMA · FITXA OFICIAL AEMPS</span>
+            <br><span style="color:#4A5B57;font-size:13px;">${r.laboratorio || ''} — nº registre ${r.nregistro || '-'}</span>
             <p style="font-size:14px;margin-top:8px;"><strong>Contraindicacions:</strong> ${r.contraindicaciones || 'no disponible'}</p>
             <p style="font-size:14px;"><strong>Interaccions:</strong> ${r.interacciones || 'no disponible'}</p>
             <p style="font-size:14px;"><strong>Reaccions adverses:</strong> ${r.reacciones_adversas || 'no disponible'}</p>
