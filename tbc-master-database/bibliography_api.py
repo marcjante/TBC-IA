@@ -21,8 +21,8 @@ Uso:
 import os
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from build_tbc_master_database import query_master_bibliography
 
@@ -30,12 +30,9 @@ DB_PATH = os.environ.get("TBC_MASTER_DB_PATH", "tbc_master.db")
 
 app = FastAPI(title="TBC Master Bibliography API")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Servicio local: el backend lo consulta de servidor a servidor. Solo se
+# aceptan peticiones dirigidas a 127.0.0.1/localhost (DNS rebinding).
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
 
 
 class BibliographyResponse(BaseModel):
@@ -43,12 +40,19 @@ class BibliographyResponse(BaseModel):
     results: list
 
 
-@app.get("/v1/bibliography")
-def get_bibliography(query: str, limit: int = 5):
+class BibliographyRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=300)
+    limit: int = Field(5, ge=1, le=20)
+
+
+@app.post("/v1/bibliography")
+def get_bibliography(payload: BibliographyRequest):
     """Busca en la base bibliografica verificada por texto libre.
 
-    Ejemplo: GET /v1/bibliography?query=isoniazid%20resistance&limit=3
+    La consulta va en el cuerpo JSON (no en la URL, para que no acabe en
+    logs): POST /v1/bibliography {"query": "isoniazid resistance", "limit": 3}
     """
+    query, limit = payload.query, payload.limit
     if not os.path.exists(DB_PATH):
         return BibliographyResponse(query=query, results=[])
 
@@ -67,4 +71,4 @@ def health():
 if __name__ == "__main__":
     import uvicorn
     print(f"Sirviendo bibliografia desde: {os.path.abspath(DB_PATH)}")
-    uvicorn.run(app, host="127.0.0.1", port=8002)
+    uvicorn.run(app, host="127.0.0.1", port=8002, access_log=False)

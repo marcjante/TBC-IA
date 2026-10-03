@@ -28,6 +28,22 @@ DASHBOARD_DIR="$HOME/Desktop/Proyectos/CCEE UMI/TBC IA/dashboard"
 
 LOG_DIR="$HOME/tbc_stack_logs"
 mkdir -p "$LOG_DIR"
+# Los logs pueden contener datos clinicos: solo legibles por tu usuario.
+chmod 700 "$LOG_DIR"
+
+# Secretos (revision de seguridad, octubre 2026): la clave del motor SOTA y el
+# token de administrador estan en TBC IA/.env (no se versiona). Se exportan
+# para todos los servicios. Sin TBC_API_KEY no se arranca nada.
+if [ -f "$TBC_AI_DIR/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$TBC_AI_DIR/.env"
+    set +a
+fi
+if [ -z "${TBC_API_KEY:-}" ]; then
+    echo "ERROR: falta TBC_API_KEY en $TBC_AI_DIR/.env (ver .env.example)."
+    exit 1
+fi
 
 echo "Logs en: $LOG_DIR"
 echo ""
@@ -72,7 +88,7 @@ else
     (
         cd "$TBC_AI_DIR" || exit 1
         source venv/bin/activate
-        nohup uvicorn backend.main:app --port 8001 > "$LOG_DIR/tbc_ai.log" 2>&1 &
+        nohup uvicorn backend.main:app --host 127.0.0.1 --port 8001 --no-access-log > "$LOG_DIR/tbc_ai.log" 2>&1 &
         echo $! > "$LOG_DIR/tbc_ai.pid"
         disown
     )
@@ -90,7 +106,7 @@ else
         echo "[4/7] Arrancando Llamafile (Mistral)..."
         (
             cd "$LLAMAFILE_DIR" || exit 1
-            nohup "./$LLAMAFILE_BIN" --server --port 8081 --nobrowser > "$LOG_DIR/llamafile.log" 2>&1 &
+            nohup "./$LLAMAFILE_BIN" --server --host 127.0.0.1 --port 8081 --nobrowser > "$LOG_DIR/llamafile.log" 2>&1 &
             echo $! > "$LOG_DIR/llamafile.pid"
             disown
         )
@@ -107,7 +123,9 @@ if curl -s http://127.0.0.1:5678 > /dev/null 2>&1; then
 else
     echo "[5/7] Arrancando n8n..."
     (
-        NODES_EXCLUDE="[]" nohup n8n start > "$LOG_DIR/n8n.log" 2>&1 &
+        # Solo accesible desde este Mac: con Execute Command activo, escuchar en
+        # todas las interfaces permitia llegar a n8n desde la misma red Wi-Fi.
+        N8N_LISTEN_ADDRESS=127.0.0.1 N8N_HOST=127.0.0.1 NODES_EXCLUDE="[]" nohup n8n start > "$LOG_DIR/n8n.log" 2>&1 &
         echo $! > "$LOG_DIR/n8n.pid"
         disown
     )

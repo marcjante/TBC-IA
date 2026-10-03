@@ -52,3 +52,6 @@ tbc-ia-sota-engine/data/
 # Entorno virtual del panel de estado
 dashboard/venv/
 archivo_historico_scripts/
+
+# Copias de seguridad de entornos (migracion a Python 3.12, octubre 2026)
+venv-py39-respaldo/

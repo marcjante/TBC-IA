@@ -1,6 +1,7 @@
-fastapi==0.115.0
+# Python 3.12 (migrado desde 3.9 en octubre 2026: 3.9 ya no recibe parches de seguridad)
+fastapi==0.141.1
 uvicorn[standard]==0.32.0
-python-multipart==0.0.12
+python-multipart==0.0.32
 chromadb==0.5.20
 ollama==0.3.3
 pymupdf==1.24.13
@@ -10,3 +11,5 @@ python-dotenv
 pytest
 pandas
 openpyxl
+defusedxml
+httpx

@@ -13,6 +13,13 @@ import ollama
 
 from backend.config import CHAT_MODEL
 
+# Sin timeout, una llamada colgada dejaba al usuario esperando
+# indefinidamente y acababa en un error 500 sin mensaje de derivacion
+# (revision de seguridad clinica, octubre 2026, M8). Quien llama debe
+# capturar la excepcion y responder con un mensaje seguro.
+LLM_TIMEOUT_SECONDS = 240
+_client = ollama.Client(timeout=LLM_TIMEOUT_SECONDS)
+
 
 def generate_response(system_prompt, user_prompt):
     # num_ctx: sin especificar, Ollama usaba el valor por defecto del
@@ -22,7 +29,7 @@ def generate_response(system_prompt, user_prompt):
     # antes de sumar pregunta/historial/sistema), lo que causaba
     # lentitud extrema y citas inventadas cuando el contexto no cabia.
     # 8192 da margen razonable sin disparar el uso de memoria en exceso.
-    response = ollama.chat(
+    response = _client.chat(
         model=CHAT_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},

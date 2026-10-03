@@ -18,6 +18,7 @@ Los umbrales (480/750) NO se han cambiado respecto al original.
 """
 
 import hashlib
+import logging
 import fitz
 import ollama
 import requests
@@ -26,6 +27,8 @@ from backend.config import (
     EMBED_MODEL, CHUNK_SIZE, CHUNK_OVERLAP, MIN_ALNUM_CHARS, collection,
     SOTA_ENGINE_URL, SOTA_ENGINE_API_KEY,
 )
+
+logger = logging.getLogger("tbc.rag")
 
 STRICT_DISTANCE_THRESHOLD = 480
 LOOSE_DISTANCE_THRESHOLD = 750
@@ -171,7 +174,7 @@ def hybrid_retrieve(query_text, top_k):
         bm25_ranked_ids = [bm25_ids[i] for i in bm25_top_local]
         bm25_lookup = {bm25_ids[i]: (bm25_docs[i], bm25_metas[i]) for i in bm25_top_local}
     except Exception as e:
-        print(f"[DEBUG hybrid_retrieve] BM25 fallo, usando solo denso: {type(e).__name__}: {e}")
+        logger.warning("hybrid_retrieve: BM25 fallo, usando solo denso (%s)", type(e).__name__)
         bm25_ranked_ids = []
         bm25_lookup = {}
 
@@ -262,7 +265,7 @@ def query_sota_fallback(query_text, timeout=8):
     try:
         resp = requests.post(
             f"{SOTA_ENGINE_URL}/v1/evidence",
-            params={"query": query_text},
+            json={"query": query_text},
             headers={"X-API-Key": SOTA_ENGINE_API_KEY},
             timeout=timeout,
         )
@@ -289,6 +292,34 @@ def query_sota_fallback(query_text, timeout=8):
         for e in evidence
     ]
     return fragments, metadatas, {"confidence": confidence, "source": "sota_engine"}
+
+
+def query_sota_alerts(query_text, timeout=8):
+    """Pide al motor complementario SOLO las alertas clinicas de la pregunta
+    (p. ej. posible toxicidad ocular por etambutol), sin recuperacion.
+
+    Revision de seguridad clinica (octubre 2026, A3): antes las alertas solo
+    se consultaban si el RAG local fallaba, asi que en el caso mas habitual
+    (el RAG si encuentra fuentes) se perdian. Ahora se consulta siempre.
+
+    Devuelve la lista de alertas (vacia si no hay), o None si el motor no
+    responde: quien llama debe tratar None como riesgo (fallar cerrado).
+    """
+    try:
+        resp = requests.post(
+            f"{SOTA_ENGINE_URL}/v1/alerts",
+            json={"query": query_text},
+            headers={"X-API-Key": SOTA_ENGINE_API_KEY},
+            timeout=timeout,
+        )
+        resp.raise_for_status()
+        alerts = resp.json().get("alerts", [])
+    except (requests.RequestException, ValueError):
+        logger.warning("query_sota_alerts: el motor complementario no responde")
+        return None
+    if not isinstance(alerts, list):
+        return None
+    return [a for a in alerts if isinstance(a, str) and a.strip()]
 
 
 def verify_groundedness(response_text, sources, timeout=15):
@@ -359,7 +390,7 @@ def query_llamafile_response(context_text, question, timeout=90):
         data = resp.json()
         return data["choices"][0]["message"]["content"]
     except (requests.RequestException, ValueError, KeyError, IndexError) as e:
-        print(f"[DEBUG query_llamafile_response] Fallo: {type(e).__name__}: {e}")
+        logger.warning("query_llamafile_response: fallo (%s)", type(e).__name__)
         return None
 
 
@@ -371,7 +402,10 @@ def search_pubmed_live(query_text, max_results=5, timeout=15):
     pagina principal cuando la base local no tiene lo que se busca.
 
     Fail-open: devuelve lista vacia si falla cualquier paso."""
-    import xml.etree.ElementTree as ET
+    try:
+        import defusedxml.ElementTree as ET
+    except ImportError:  # pragma: no cover
+        import xml.etree.ElementTree as ET
 
     try:
         params = {
@@ -444,9 +478,9 @@ def query_master_bibliography(query_text, limit=3, timeout=10):
     para no romper el flujo normal de /api/chat si el servicio de
     bibliografia no esta corriendo."""
     try:
-        resp = requests.get(
+        resp = requests.post(
             f"{BIBLIOGRAPHY_API_URL}/v1/bibliography",
-            params={"query": query_text, "limit": limit},
+            json={"query": query_text, "limit": limit},
             timeout=timeout,
         )
         resp.raise_for_status()

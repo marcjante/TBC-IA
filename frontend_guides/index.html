@@ -574,17 +574,27 @@ async function uploadFile(file) {
   formData.append("category", "sin_categoria");
 
   try {
+    // La subida exige el token de administrador (TBC_ADMIN_TOKEN del .env).
+    // Se pide una vez y se guarda solo durante la sesion del navegador.
+    let adminToken = sessionStorage.getItem("tbc_admin_token");
+    if (!adminToken) {
+      adminToken = window.prompt("Token de administrador para subir documentos:") || "";
+      if (!adminToken) { statusEl.textContent = "Subida cancelada: falta el token."; return; }
+      sessionStorage.setItem("tbc_admin_token", adminToken);
+    }
     const res = await fetch(API_URL + "/api/upload", {
       method: "POST",
+      headers: { "X-Admin-Token": adminToken },
       body: formData,
     });
+    if (res.status === 401) sessionStorage.removeItem("tbc_admin_token");
     const data = await res.json();
 
     if (data.status === "ok") {
       statusEl.textContent = `"${data.filename}" indexado (${data.chunks_indexed} fragmentos). Total: ${data.total_documentos_indexados}.`;
       checkHealth();
     } else {
-      statusEl.textContent = "Error: " + data.detail;
+      statusEl.textContent = "Error: " + (data.detail || "no se pudo subir el archivo");
     }
   } catch (e) {
     statusEl.textContent = "Error al subir el archivo: " + e.message;

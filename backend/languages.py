@@ -68,3 +68,65 @@ NOTA_RIESGO_BY_LANG = {
 
 def resolve_nota_riesgo(lang_code):
     return NOTA_RIESGO_BY_LANG.get(lang_code, NOTA_RIESGO_BY_LANG["es"])
+
+
+# ------------------------------------------------------------------------------
+# Revision de seguridad clinica, octubre 2026. Las versiones en arabe y urdu
+# estan PENDIENTES DE REVISION POR UN HABLANTE NATIVO, igual que las anteriores.
+# ------------------------------------------------------------------------------
+
+# M2: el mensaje de "sin informacion" indica ademas a quien acudir. Se
+# mantiene el comienzo de la frase original para que detect_no_info_statement
+# y el frontend sigan reconociendolo.
+REFERRAL_BY_LANG = {
+    "es": "Consulta esta duda con tu equipo de tuberculosis o con tu centro de salud.",
+    "ca": "Consulta aquest dubte amb el teu equip de tuberculosi o amb el teu centre de salut.",
+    "ar": "استشر فريق علاج السل أو مركزك الصحي بخصوص هذا السؤال.",
+    "ur": "اس سوال کے بارے میں اپنی تپ دق کی علاج ٹیم یا اپنے صحت مرکز سے مشورہ کریں۔",
+}
+
+# A1: la respuesta generada contenia cifras (dosis, duraciones) que no se
+# han podido verificar contra las fuentes, asi que no se muestra.
+CANNED_BLOQUEO_CIFRAS_BY_LANG = {
+    "es": "No puedo darte una respuesta segura a esta pregunta: incluye dosis o duraciones que no he podido comprobar en las guías clínicas. Pregúntalo a tu equipo de tuberculosis o a tu farmacéutico.",
+    "ca": "No et puc donar una resposta segura a aquesta pregunta: inclou dosis o durades que no he pogut comprovar a les guies clíniques. Pregunta-ho al teu equip de tuberculosi o al teu farmacèutic.",
+    "ar": "لا أستطيع أن أعطيك إجابة آمنة على هذا السؤال: فهو يتضمن جرعات أو مدد علاج لم أتمكن من التحقق منها في الإرشادات السريرية. اسأل فريق علاج السل أو الصيدلي.",
+    "ur": "میں اس سوال کا محفوظ جواب نہیں دے سکتا: اس میں دوا کی مقدار یا علاج کی مدت شامل ہے جس کی میں طبی رہنما اصولوں میں تصدیق نہیں کر سکا۔ اپنی تپ دق کی علاج ٹیم یا فارماسسٹ سے پوچھیں۔",
+}
+
+# A3: el motor complementario detecta una posible toxicidad (p. ej. ocular
+# por etambutol).
+CANNED_ALERTA_TOXICIDAD_BY_LANG = {
+    "es": "Atención: lo que describes podría ser un efecto adverso importante de la medicación. Contacta hoy mismo con tu equipo de tuberculosis y, si empeora, acude a urgencias (112). No dejes ni cambies la medicación por tu cuenta.",
+    "ca": "Atenció: el que descrius podria ser un efecte advers important de la medicació. Contacta avui mateix amb el teu equip de tuberculosi i, si empitjora, ves a urgències (112). No deixis ni canviïs la medicació pel teu compte.",
+    "ar": "انتبه: ما تصفه قد يكون أثرا جانبيا مهما للدواء. اتصل اليوم بفريق علاج السل، وإذا ساءت حالتك توجه إلى الطوارئ (112). لا توقف الدواء ولا تغيره من تلقاء نفسك.",
+    "ur": "توجہ دیں: جو آپ بیان کر رہے ہیں وہ دوا کا ایک اہم مضر اثر ہو سکتا ہے۔ آج ہی اپنی تپ دق کی علاج ٹیم سے رابطہ کریں اور اگر حالت بگڑے تو ایمرجنسی (112) جائیں۔ اپنی مرضی سے دوا بند یا تبدیل نہ کریں۔",
+}
+
+# A6: la traduccion no ha superado la comprobacion de cifras; se muestra la
+# respuesta en castellano precedida de este aviso.
+TRADUCCION_NO_VERIFICADA_BY_LANG = {
+    "ca": "No he pogut traduir aquesta resposta amb seguretat. Te la mostro en castellà; si tens dubtes, pregunta-ho al teu equip de tuberculosi.",
+    "ar": "لم أتمكن من ترجمة هذه الإجابة بشكل آمن. أعرضها لك بالإسبانية؛ إذا كان لديك أي شك، اسأل فريق علاج السل.",
+    "ur": "میں اس جواب کا محفوظ ترجمہ نہیں کر سکا۔ یہ ہسپانوی زبان میں دکھا رہا ہوں؛ اگر کوئی شک ہو تو اپنی تپ دق کی علاج ٹیم سے پوچھیں۔",
+}
+
+
+def _by_lang(table, lang_code):
+    return table.get(lang_code, table["es"])
+
+
+def resolve_no_info_with_referral(lang_code):
+    return resolve_canned_no_info(lang_code) + " " + _by_lang(REFERRAL_BY_LANG, lang_code)
+
+
+def resolve_bloqueo_cifras(lang_code):
+    return _by_lang(CANNED_BLOQUEO_CIFRAS_BY_LANG, lang_code)
+
+
+def resolve_alerta_toxicidad(lang_code):
+    return _by_lang(CANNED_ALERTA_TOXICIDAD_BY_LANG, lang_code)
+
+
+def resolve_traduccion_no_verificada(lang_code):
+    return TRADUCCION_NO_VERIFICADA_BY_LANG.get(lang_code, "")

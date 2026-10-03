@@ -28,14 +28,19 @@ from typing import Dict, List, Set, Optional, Tuple, Any
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import xml.etree.ElementTree as ET
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:  # pragma: no cover
+    import xml.etree.ElementTree as ET
+import secrets
 
 # --- FastAPI ---
 from fastapi import FastAPI, HTTPException, Depends, Security, Query, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 import uvicorn
 
 # --- SQLAlchemy ---
@@ -56,7 +61,9 @@ except ImportError:
 # 1. CONFIGURACIÓN Y LOGGING
 # ==============================================================================
 
-API_SECRET_KEY = os.getenv("TBC_API_KEY", "tbc_ia_secret_v7")
+# Revision de seguridad (octubre 2026): sin clave por defecto en el codigo
+# (la antigua quedo publicada en git y se ha rotado). Si falta, no arranca.
+API_SECRET_KEY = os.environ["TBC_API_KEY"]
 NCBI_EMAIL = os.getenv("NCBI_EMAIL", "tbc_ia_research@domain.org")
 NCBI_API_KEY = os.getenv("NCBI_API_KEY", "")
 
@@ -401,11 +408,18 @@ async def lifespan(app: FastAPI):
     db.close()
 
 app = FastAPI(title="TBC IA - SOTA Engine", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+# El backend llama a este motor de servidor a servidor: no hace falta CORS.
+# Solo se aceptan peticiones dirigidas a 127.0.0.1/localhost (DNS rebinding).
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
 
 def verify_api_key(api_key: str = Security(APIKeyHeader(name="X-API-Key", auto_error=False))):
-    if api_key != API_SECRET_KEY: raise HTTPException(status_code=401, detail="Unauthorized")
+    if not api_key or not secrets.compare_digest(api_key, API_SECRET_KEY):
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return api_key
+
+
+class QueryRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=2000)
 
 # --- ENDPOINT 1: RAG EVIDENCE ---
 class EvidenceResponse(BaseModel):
@@ -417,8 +431,24 @@ class EvidenceResponse(BaseModel):
     contradiction_status: str
     grounded_evidence: List[Dict[str, Any]]
 
+class AlertsResponse(BaseModel):
+    alerts: List[str]
+
+
+@app.post("/v1/alerts", response_model=AlertsResponse)
+def get_alerts(payload: QueryRequest, api_key: str = Depends(verify_api_key)):
+    """Solo las alertas clinicas de la pregunta, sin recuperacion (barato).
+    El backend lo consulta SIEMPRE antes de generar (revision de seguridad
+    clinica, octubre 2026)."""
+    pipeline: SOTARagPipeline = app_state["pipeline"]
+    return AlertsResponse(alerts=pipeline.analyze_query(payload.query)["alerts"])
+
+
+# La pregunta viaja en el cuerpo JSON (antes iba en la URL y acababa en los
+# logs de acceso: datos de salud en ficheros sin control).
 @app.post("/v1/evidence", response_model=EvidenceResponse)
-def get_evidence(query: str = Query(...), api_key: str = Depends(verify_api_key)):
+def get_evidence(payload: QueryRequest, api_key: str = Depends(verify_api_key)):
+    query = payload.query
     pipeline: SOTARagPipeline = app_state["pipeline"]
     analysis = pipeline.analyze_query(query)
 
@@ -523,8 +553,9 @@ def check_sentence_grounded(sentence: str, sources: List[str], debug: bool = Fal
 
 
 class GroundednessRequest(BaseModel):
-    response_text: str
-    sources: List[str]
+    response_text: str = Field(..., max_length=20000)
+    # Limite de pares frase x fuente: el NLI se ejecuta por cada par.
+    sources: List[str] = Field(..., max_length=20)
     debug: bool = False
 
 
@@ -563,4 +594,4 @@ def verify_groundedness(payload: GroundednessRequest, api_key: str = Depends(ver
 
 if __name__ == "__main__":
     print("Iniciando TBC IA SOTA Engine en http://127.0.0.1:8003")
-    uvicorn.run(app, host="127.0.0.1", port=8003)
+    uvicorn.run(app, host="127.0.0.1", port=8003, access_log=False)

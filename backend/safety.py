@@ -16,6 +16,8 @@ integra (223 terminos, ampliados en 3 tandas durante la sesion de agosto
 frecuentes detectados en el banco de 360 preguntas).
 """
 
+import re
+
 TB_KEYWORDS = [
     "tubercul", "tbc", "tb ", "bacilo", "mycobacterium", "koch",
     "contagi", "contagio", "transmit", "transmis",
@@ -244,8 +246,20 @@ def detect_no_info_statement(response_text):
     return any(variant in normalized for variant in NO_INFO_VARIANTS)
 
 
+def _keyword_pattern(kw):
+    """Las palabras clave son raices ("tubercul", "vomit") que deben aparecer
+    al INICIO de una palabra; las que terminan en espacio ("tb ", "tac ") son
+    palabras completas."""
+    stem = re.escape(normalize_accents(kw.strip()))
+    return r"(?<!\w)" + stem + (r"(?!\w)" if kw.endswith(" ") else "")
+
+
+_TB_KEYWORD_RE = re.compile("|".join(_keyword_pattern(kw) for kw in TB_KEYWORDS))
+
+
 def is_tb_related(text):
-    normalized = text.lower()
-    normalized = normalized.replace("?", " ").replace("!", " ").replace(".", " ").replace(",", " ")
-    normalized = " " + normalized + " "
-    return any((" " + kw if not kw.endswith(" ") else kw) in normalized for kw in TB_KEYWORDS) or any(kw.strip() in normalized for kw in TB_KEYWORDS)
+    """Revision de seguridad clinica (octubre 2026, M3): antes se buscaban
+    subcadenas, asi que "tos" coincidia con "datos" y "alta" con "faltan" y
+    casi cualquier frase recibia el umbral permisivo (750). Ahora las
+    palabras clave deben aparecer al inicio de una palabra."""
+    return bool(_TB_KEYWORD_RE.search(normalize_accents(text)))

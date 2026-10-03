@@ -1,3 +1,4 @@
+# Python 3.12 (migrado desde 3.9 en octubre 2026)
 fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
 sqlalchemy>=2.0.0
@@ -7,4 +8,5 @@ urllib3>=2.2.0
 numpy>=1.26.0
 sentence-transformers>=2.6.0
 torch>=2.2.0
-transformers>=4.39.0
+transformers>=5.10  # vulnerabilidades corregidas a partir de 5.10 (revision octubre 2026)
+defusedxml

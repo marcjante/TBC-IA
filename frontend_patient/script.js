@@ -616,46 +616,9 @@ function detectKbTopicId(text){
   return id || null;
 }
 
-/* Tradueix un fragment curt (anglès -> lang) fent servir MyMemory, una API
-   pública i gratuïta de traducció (sense clau, sense backend propi). Si la
-   traducció falla o no hi ha connexió, retorna null i qui crida decideix
-   com mostrar-ho (per exemple, deixant el text original en anglès). */
-async function translateSnippet(text, lang){
-  if(lang !== 'ca' && lang !== 'es') return null;
-  try{
-    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|' + lang;
-    const res = await fetch(url);
-    if(!res.ok) return null;
-    const data = await res.json();
-    if(data.quotaFinished) return null;
-    const translated = data.responseData && data.responseData.translatedText;
-    if(!translated || /INVALID|MYMEMORY WARNING/i.test(translated)) return null;
-    return translated;
-  }catch(e){
-    console.warn('Traducció automàtica no disponible', e);
-    return null;
-  }
-}
-
-/* Tradueix un text del pacient (lang -> anglès) per poder-lo comparar amb
-   els documents (que estan en anglès) fent servir el model d'embeddings.
-   Mateixa API gratuïta que translateSnippet, en la direcció contrària. */
-async function translateToEnglish(text, lang){
-  if(lang !== 'ca' && lang !== 'es') return null;
-  try{
-    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=' + lang + '|en';
-    const res = await fetch(url);
-    if(!res.ok) return null;
-    const data = await res.json();
-    if(data.quotaFinished) return null;
-    const translated = data.responseData && data.responseData.translatedText;
-    if(!translated || /INVALID|MYMEMORY WARNING/i.test(translated)) return null;
-    return translated;
-  }catch(e){
-    console.warn('Traducció a l\'anglès no disponible', e);
-    return null;
-  }
-}
+/* Revisio de seguretat (octubre 2026): s'han eliminat translateSnippet() i
+   translateToEnglish(), que no es feien servir i enviaven text a un servei de
+   traduccio extern. Les traduccions es fan amb el model local del backend. */
 
 /* Paraules clau clíniques en anglès per a cada tema, per "ancorar" la cerca
    al concepte correcte encara que el text del pacient sigui vague, en
@@ -844,7 +807,7 @@ function daysUntil(d){
 function renderChatView(){
   const el = document.getElementById('viewChat');
   const ids = Object.keys(patients);
-  let optionsHtml = ids.map(id=>`<option value="${id}" ${id===currentPatientId?'selected':''}>${patients[id].name} (${patients[id].type})</option>`).join('');
+  let optionsHtml = ids.map(id=>`<option value="${escapeHtml(id)}" ${id===currentPatientId?'selected':''}>${escapeHtml(patients[id].name)} (${escapeHtml(patients[id].type)})</option>`).join('');
 
   el.innerHTML = `
     <div class="card">

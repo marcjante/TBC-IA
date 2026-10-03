@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TBC · Panell local</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231F4B4C'/%3E%3Cpath d='M10,50 L35,50 L42,30 L50,70 L58,50 L90,50' stroke='%233E8E89' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EEF3F0;
+    --ink: #152623;
+    --ink-soft: #4A5B57;
+    --teal: #1F6F72;
+    --teal-bright: #3E8E89;
+    --rust: #B8433A;
+    --line: #D7E0DB;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 64px 24px 40px;
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal-bright);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: clamp(36px, 6vw, 56px);
+    margin: 0;
+    color: var(--ink);
+    text-align: center;
+  }
+  .sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 440px;
+    text-align: center;
+    margin: 14px 0 0;
+    line-height: 1.5;
+  }
+  .wave {
+    width: 100%;
+    max-width: 560px;
+    height: 40px;
+    margin: 40px 0 44px;
+  }
+  .wave path {
+    fill: none;
+    stroke: var(--teal-bright);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+    animation: draw 3.2s ease-in-out infinite alternate;
+    opacity: 0.55;
+  }
+  @keyframes draw {
+    to { stroke-dashoffset: 0; }
+  }
+  .cards {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 880px;
+    width: 100%;
+  }
+  .card {
+    flex: 1 1 320px;
+    max-width: 380px;
+    background: #FFFFFF;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 30px 28px 26px;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(21,38,35,0.09);
+    border-color: var(--teal-bright);
+  }
+  .tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-bottom: 16px;
+  }
+  .tag.patient { background: rgba(31,111,114,0.1); color: var(--teal); }
+  .tag.clinic { background: rgba(184,67,58,0.1); color: var(--rust); }
+  .card h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 23px;
+    margin: 0 0 10px;
+  }
+  .card p {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0 0 20px;
+  }
+  .status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal-bright);
+    flex-shrink: 0;
+  }
+  footer {
+    margin-top: 56px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  @media (max-width: 480px) {
+    body { padding: 44px 18px 32px; }
+  }
+  .biblio-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .biblio-input {
+    flex: 1 1 auto;
+    min-width: 180px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    background: #fcfdfc;
+    color: var(--ink);
+  }
+  .biblio-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+  }
+  .biblio-btn-primary { border: none; background: var(--teal); color: white; }
+  .biblio-btn-primary:hover { background: var(--teal-dark); }
+  .biblio-btn-ghost { border: 1px solid var(--teal); background: white; color: var(--teal); }
+  .biblio-btn-ghost:hover { background: rgba(31,111,114,0.08); }
+  @media (max-width: 560px) {
+    .biblio-bar { flex-direction: column; }
+    .biblio-btn { white-space: normal; width: 100%; }
+  }
+</style>
+</head>
+<body>
+  <div class="eyebrow">Panell local · Tuberculosi</div>
+  <h1>Consulta &amp; guies</h1>
+  <p class="sub">Dues eines, un sol servidor. Tot funciona al teu ordinador, sense connexio a internet ni dades que en surtin.</p>
+
+  <svg class="wave" viewBox="0 0 560 40" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,20 L120,20 L136,6 L152,34 L168,20 L200,20 L216,12 L232,28 L248,20 L560,20" />
+  </svg>
+
+  <div class="cards">
+    <a class="card" href="/patient/">
+      <span class="tag patient">Pacients</span>
+      <h2>Seguiment TBC · ITL</h2>
+      <p>Xat de triatge amb pacients en tractament, historial de missatges i panell professional de seguiment.</p>
+      <div class="status"><span class="dot"></span>Firestore · en linia</div>
+    </a>
+    <a class="card" href="/guides/">
+      <span class="tag clinic">Clinic</span>
+      <h2>TBC-AI</h2>
+      <p>Assistent sobre guies cliniques de l'OMS, CDC i ECDC, amb cita de font i pagina en cada resposta.</p>
+      <div class="status"><span class="dot"></span>Ollama · {CHAT_MODEL_PLACEHOLDER}</div>
+    </a>
+    <a class="card" href="http://127.0.0.1:8090" target="_blank">
+      <span class="tag clinic">Sistema</span>
+      <h2>Panel TBC-IA</h2>
+      <p>Estat en temps real dels set serveis (Ollama, motor complementari, Llamafile, n8n, bibliografia...).</p>
+      <div class="status"><span class="dot" id="panel-dot" style="background:#4A5B57;"></span><span id="panel-text">Comprovant...</span></div>
+    </a>
+  </div>
+
+  <div class="biblio-search-section" style="max-width:900px;margin:40px auto;padding:0 20px;">
+    <h2 style="margin-bottom:12px;">Cerca a la bibliografia verificada</h2>
+    <div class="biblio-bar">
+      <input id="biblio-query" type="text" placeholder="p.ex. isoniazid resistance"
+             class="biblio-input"
+             onkeydown="if(event.key==='Enter') searchBiblio()">
+      <button onclick="searchBiblio()" class="biblio-btn biblio-btn-primary">
+        Cercar (base verificada)
+      </button>
+      <button onclick="searchBiblioLive()" class="biblio-btn biblio-btn-ghost">
+        Cercar en viu a PubMed
+      </button>
+    </div>
+    <p style="font-size:12px;color:#4A5B57;margin:0 0 12px;">La cerca en viu envia el text a PubMed (NCBI, internet). No hi escriguis dades de pacients.</p>
+    <div id="biblio-results"></div>
+  </div>
+
+  <footer>servidor local actiu — cap document ni conversa surt d'aquest ordinador</footer>
+  <script>
+    fetch('/api/panel-status').then(r => r.json()).then(d => {
+      const dot = document.getElementById('panel-dot');
+      const text = document.getElementById('panel-text');
+      if (d.connected) {
+        dot.style.background = '#4F8562';
+        text.textContent = 'Panel connectat';
+      } else {
+        dot.style.background = '#B8433A';
+        text.textContent = 'Panel no connectat';
+      }
+    }).catch(() => {
+      document.getElementById('panel-text').textContent = 'Panel no connectat';
+    });
+
+    // Todo dato externo (PubMed, CIMA) se escapa antes de insertarlo en el HTML.
+    function esc(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    const DOI_RE = /^10\.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/;
+
+    let currentBiblioResults = [];
+
+    function articleCardsHtml(results, live) {
+      if (!results || !results.length) return '';
+      const badge = live
+        ? '<span style="background:#FBF1DE;color:#B4791E;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">EN VIU · SENSE VERIFICAR</span>'
+        : '<span style="background:#E9F2EA;color:#4F8562;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">VERIFICAT</span>';
+      return results.map((r, i) => `
+        <div style="border:1px solid #D7E0DB;border-radius:8px;padding:14px;margin-bottom:10px;">
+          <strong>${esc(r.title)}</strong>${badge}<br>
+          <span style="color:#4A5B57;font-size:13px;">${esc(r.journal || 'revista desconeguda')} (${esc(r.year || 's.f.')}) — PMID: ${esc(r.pmid || '-')}</span>
+          <p style="font-size:14px;margin-top:8px;" id="biblio-abstract-${i}">${esc((r.abstract || '').slice(0, 300))}${(r.abstract || '').length > 300 ? '...' : ''}</p>
+          <button onclick="translateCard(${i})"
+                  style="font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid #1F6F72;background:white;color:#1F6F72;cursor:pointer;margin-bottom:6px;">
+            Traduir al castella
+          </button>
+          <div id="biblio-translated-${i}" style="font-size:14px;color:#152623;font-style:italic;margin-bottom:6px;"></div>
+          ${r.doi && DOI_RE.test(r.doi) ? `<a href="https://doi.org/${encodeURI(r.doi)}" target="_blank" rel="noopener noreferrer">DOI: ${esc(r.doi)}</a>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function aempsCardHtml(r) {
+      if (!r) return '';
+      return `
+        <div style="border:1px solid #D7E0DB;border-radius:8px;padding:14px;margin-bottom:10px;">
+          <strong>${esc(r.nombre)}</strong>
+          <span style="background:#E9F2EA;color:#4F8562;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">VERIFICAT · CIMA AEMPS</span>
+          <br><span style="color:#4A5B57;font-size:13px;">${esc(r.laboratorio)} — nº registre ${esc(r.nregistro || '-')}</span>
+          <p style="font-size:14px;margin-top:8px;"><strong>Contraindicacions:</strong> ${esc(r.contraindicaciones || 'no disponible')}</p>
+          <p style="font-size:14px;"><strong>Interaccions:</strong> ${esc(r.interacciones || 'no disponible')}</p>
+          <p style="font-size:14px;"><strong>Reaccions adverses:</strong> ${esc(r.reacciones_adversas || 'no disponible')}</p>
+        </div>
+      `;
+    }
+
+    function renderBiblioResults(results, resultsDiv, live) {
+      currentBiblioResults = results || [];
+      const html = articleCardsHtml(results, live);
+      resultsDiv.innerHTML = html || '<p>Sense resultats.</p>';
+    }
+
+    async function translateCard(i) {
+      const div = document.getElementById('biblio-translated-' + i);
+      const r = currentBiblioResults[i];
+      if (!r || !r.abstract) {
+        div.textContent = 'No hi ha text per traduir.';
+        return;
+      }
+      div.textContent = 'Traduint (pot trigar uns segons, es fa amb el model local)...';
+      try {
+        const resp = await fetch('/api/translate', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: r.abstract})});
+        const data = await resp.json();
+        div.textContent = data.error ? 'Error en la traduccio.' : data.translated;
+      } catch (e) {
+        div.textContent = 'Error en la traduccio.';
+      }
+    }
+
+    async function searchBiblio() {
+      const q = document.getElementById('biblio-query').value.trim();
+      const resultsDiv = document.getElementById('biblio-results');
+      if (!q) return;
+      resultsDiv.innerHTML = '<p>Cercant a la base verificada (bibliografia + CIMA)...</p>';
+      try {
+        const [biblioResp, aempsResp] = await Promise.all([
+          fetch('/api/bibliography-search?query=' + encodeURIComponent(q) + '&limit=5'),
+          fetch('/api/aemps-search?query=' + encodeURIComponent(q)),
+        ]);
+        const biblioData = await biblioResp.json();
+        const aempsData = await aempsResp.json();
+
+        currentBiblioResults = biblioData.results || [];
+        const html = aempsCardHtml(aempsData.result) + articleCardsHtml(currentBiblioResults, false);
+        resultsDiv.innerHTML = html || '<p>Sense resultats a la base verificada (bibliografia ni CIMA).</p>';
+      } catch (e) {
+        resultsDiv.innerHTML = '<p>Error consultant la base verificada.</p>';
+      }
+    }
+
+    async function searchBiblioLive() {
+      const q = document.getElementById('biblio-query').value.trim();
+      const resultsDiv = document.getElementById('biblio-results');
+      if (!q) return;
+      resultsDiv.innerHTML = '<p>Cercant en viu a PubMed (pot trigar unes segons)...</p>';
+      try {
+        const resp = await fetch('/api/bibliography-search-live?query=' + encodeURIComponent(q) + '&limit=5');
+        const data = await resp.json();
+        renderBiblioResults(data.results, resultsDiv, true);
+      } catch (e) {
+        resultsDiv.innerHTML = '<p>Error consultant PubMed en viu.</p>';
+      }
+    }
+
+    async function searchAemps() {
+      const q = document.getElementById('biblio-query').value.trim();
+      const resultsDiv = document.getElementById('biblio-results');
+      if (!q) return;
+      resultsDiv.innerHTML = '<p>Cercant a CIMA (AEMPS)...</p>';
+      try {
+        const resp = await fetch('/api/aemps-search?query=' + encodeURIComponent(q));
+        const data = await resp.json();
+        if (!data.result) {
+          resultsDiv.innerHTML = '<p>No shan trobat medicaments amb aquest nom a CIMA.</p>';
+          return;
+        }
+        const r = data.result;
+        resultsDiv.innerHTML = `
+          <div style="border:1px solid #D7E0DB;border-radius:8px;padding:14px;margin-bottom:10px;">
+            <strong>${esc(r.nombre)}</strong>
+            <span style="background:#E4F1F1;color:#123F42;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">CIMA · FITXA OFICIAL AEMPS</span>
+            <br><span style="color:#4A5B57;font-size:13px;">${esc(r.laboratorio)} — nº registre ${esc(r.nregistro || '-')}</span>
+            <p style="font-size:14px;margin-top:8px;"><strong>Contraindicacions:</strong> ${esc(r.contraindicaciones || 'no disponible')}</p>
+            <p style="font-size:14px;"><strong>Interaccions:</strong> ${esc(r.interacciones || 'no disponible')}</p>
+            <p style="font-size:14px;"><strong>Reaccions adverses:</strong> ${esc(r.reacciones_adversas || 'no disponible')}</p>
+          </div>
+        `;
+      } catch (e) {
+        resultsDiv.innerHTML = '<p>Error consultant CIMA.</p>';
+      }
+    }
+  </script>
+</body>
+</html>
