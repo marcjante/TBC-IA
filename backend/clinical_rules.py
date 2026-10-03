@@ -261,7 +261,13 @@ def figures_supported_by_context(claim, context_text):
 # ------------------------------------------------------------------------------
 # Citas
 # ------------------------------------------------------------------------------
-_CITATION_RE = re.compile(r"\(Fuente:\s*([^,)]+?)\s*(?:,\s*p\.?\s*(\d+))?\s*\)", re.IGNORECASE)
+# Formatos aceptados: "(Fuente: X, p.N)" (el pedido en el prompt) y el que a
+# veces copia el modelo del contexto: "(Fuente: X, categoria: Y, pagina: N)".
+_CITATION_RE = re.compile(
+    r"\(Fuente:\s*([^,)]+?)\s*(?:,\s*categor[ií]a:\s*[^,)]+?)?\s*"
+    r"(?:,\s*(?:p\.?|p[aá]g(?:ina)?\.?:?)\s*(\d+))?\s*\)",
+    re.IGNORECASE,
+)
 
 
 def find_invalid_citations(response_text, used_sources):

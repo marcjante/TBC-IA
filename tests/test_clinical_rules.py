@@ -115,6 +115,12 @@ class TestCitas:
         texto = "Dura 4 meses (Fuente: NICE_2019.pdf, p.40)."
         assert find_invalid_citations(texto, self.fuentes) == ["(Fuente: NICE_2019.pdf, p.40)"]
 
+    def test_formato_largo_con_categoria_y_pagina(self):
+        ok = "Dura 3 meses (Fuente: WHO_guidelines_2022.pdf, categoria: 01_WHO, pagina: 12)."
+        mal = "Dura 3 meses (Fuente: WHO_guidelines_2022.pdf, categoria: 01_WHO, pagina: 99)."
+        assert find_invalid_citations(ok, self.fuentes) == []
+        assert len(find_invalid_citations(mal, self.fuentes)) == 1
+
     def test_pagina_que_no_estaba_en_el_contexto(self):
         texto = "Dura 6 meses (Fuente: CDC_LTBI.pdf, p.99)."
         assert len(find_invalid_citations(texto, self.fuentes)) == 1
