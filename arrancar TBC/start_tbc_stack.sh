@@ -6,7 +6,7 @@
 # automatizaciones y el panel de estado, cada uno en segundo plano con su
 # propio log:
 #   1. Ollama              (puerto 11434)
-#   2. Motor complementario / tbc-ia-sota-engine (puerto 8000)
+#   2. Motor complementario / tbc-ia-sota-engine (puerto 8003)
 #   3. TBC-AI backend      (puerto 8001)
 #   4. Llamafile / Mistral (puerto 8081) — usado por dual_model_check.py
 #   5. n8n                 (puerto 5678) — copias de seguridad automáticas
@@ -19,12 +19,12 @@
 # siempre basta en macOS si se cierra la ventana entera).
 #
 # AJUSTA estas rutas si tus proyectos no están donde se indica:
-SOTA_ENGINE_DIR="$HOME/Desktop/TBC IA/tbc-ia-sota-engine"
-TBC_AI_DIR="$HOME/Desktop/TBC IA"
-LLAMAFILE_DIR="$HOME/Desktop/TBC IA/llamafile-test"
+SOTA_ENGINE_DIR="$HOME/Desktop/Proyectos/CCEE UMI/TBC IA/tbc-ia-sota-engine"
+TBC_AI_DIR="$HOME/Desktop/Proyectos/CCEE UMI/TBC IA"
+LLAMAFILE_DIR="$HOME/Desktop/Proyectos/CCEE UMI/TBC IA/llamafile-test"
 LLAMAFILE_BIN="mistral.llamafile"
-BIBLIOGRAPHY_DIR="$HOME/Desktop/TBC IA/tbc-master-database"
-DASHBOARD_DIR="$HOME/Desktop/TBC IA/dashboard"
+BIBLIOGRAPHY_DIR="$HOME/Desktop/Proyectos/CCEE UMI/TBC IA/tbc-master-database"
+DASHBOARD_DIR="$HOME/Desktop/Proyectos/CCEE UMI/TBC IA/dashboard"
 
 LOG_DIR="$HOME/tbc_stack_logs"
 mkdir -p "$LOG_DIR"
@@ -48,8 +48,8 @@ else
     fi
 fi
 
-# --- 2. Motor complementario (tbc-ia-sota-engine, puerto 8000) ---
-if curl -s http://127.0.0.1:8000 > /dev/null 2>&1; then
+# --- 2. Motor complementario (tbc-ia-sota-engine, puerto 8003) ---
+if curl -s http://127.0.0.1:8003 > /dev/null 2>&1; then
     echo "[2/7] Motor complementario ya está corriendo, no se toca."
 else
     echo "[2/7] Arrancando motor complementario (tarda ~10-15s en cargar modelos)..."

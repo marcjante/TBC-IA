@@ -562,5 +562,5 @@ def verify_groundedness(payload: GroundednessRequest, api_key: str = Depends(ver
 
 
 if __name__ == "__main__":
-    print("Iniciando TBC IA SOTA Engine en http://127.0.0.1:8000")
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    print("Iniciando TBC IA SOTA Engine en http://127.0.0.1:8003")
+    uvicorn.run(app, host="127.0.0.1", port=8003)

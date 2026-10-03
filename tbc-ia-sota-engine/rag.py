@@ -112,7 +112,7 @@ def is_relevant(fragments, distances, has_keyword):
 
 def query_sota_fallback(query_text, timeout=8):
     """Consulta el motor tbc-ia-sota-engine (recuperacion hibrida BM25+denso
-    con reranking, servido aparte en http://127.0.0.1:8000) cuando ChromaDB
+    con reranking, servido aparte en http://127.0.0.1:8003) cuando ChromaDB
     no ha encontrado nada suficientemente relevante (is_relevant() == False).
 
     Devuelve una tupla (fragments, metadatas, info):

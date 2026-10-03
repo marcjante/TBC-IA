@@ -26,7 +26,7 @@ app = FastAPI(title="Panel TBC-IA")
 
 SERVICES = [
     {"name": "Ollama", "port": 11434, "url": "http://127.0.0.1:11434", "link": "http://127.0.0.1:11434", "desc": "Modelo Llama 3.1 8B"},
-    {"name": "Motor complementario", "port": 8000, "url": "http://127.0.0.1:8000", "link": "http://127.0.0.1:8000", "desc": "Recuperacion hibrida + verificacion"},
+    {"name": "Motor complementario", "port": 8003, "url": "http://127.0.0.1:8003", "link": "http://127.0.0.1:8003", "desc": "Recuperacion hibrida + verificacion"},
     {"name": "TBC-AI", "port": 8001, "url": "http://127.0.0.1:8001/api/health", "link": "http://127.0.0.1:8001", "desc": "Backend principal (chat profesional y pacientes)"},
     {"name": "Llamafile / Mistral", "port": 8081, "url": "http://127.0.0.1:8081/health", "link": "http://127.0.0.1:8081", "desc": "Segundo modelo (consenso entre modelos)"},
     {"name": "n8n", "port": 5678, "url": "http://127.0.0.1:5678", "link": "http://127.0.0.1:5678", "desc": "Automatizaciones (copias de seguridad, harvester)"},

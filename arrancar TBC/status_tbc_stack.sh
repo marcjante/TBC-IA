@@ -9,8 +9,8 @@ else
     echo "NO RESPONDE"
 fi
 
-echo -n "Motor complementario (8000): "
-if curl -s http://127.0.0.1:8000 > /dev/null 2>&1; then
+echo -n "Motor complementario (8003): "
+if curl -s http://127.0.0.1:8003 > /dev/null 2>&1; then
     echo "OK"
 else
     echo "NO RESPONDE"
